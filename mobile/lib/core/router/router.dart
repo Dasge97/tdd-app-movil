@@ -23,7 +23,7 @@ final routerProvider = Provider<GoRouter>((ref) {
   final notifier = ref.watch(authProvider.notifier);
 
   return GoRouter(
-    initialLocation: '/home',
+    initialLocation: '/login',
     refreshListenable: _AuthListenable(ref),
     redirect: (context, state) {
       final authState = ref.read(authProvider);
@@ -32,8 +32,8 @@ final routerProvider = Provider<GoRouter>((ref) {
       final location = state.matchedLocation;
       final isAuthRoute = _authRoutes.contains(location);
 
-      // Still initializing
-      if (isLoading) return null;
+      // Still initializing — keep on auth screens, redirect home→login to avoid 401
+      if (isLoading) return isAuthRoute ? null : '/login';
 
       // Not authenticated and not on auth screen → redirect to login
       if (!isAuth && !isAuthRoute) return '/login';

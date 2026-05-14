@@ -13,7 +13,7 @@ import '../social/friends_screen.dart';
 import 'debate_card.dart';
 
 final _todayDebatesProvider =
-    FutureProvider<List<Debate>>((ref) async {
+    FutureProvider.autoDispose<List<Debate>>((ref) async {
   final dio = ref.read(apiClientProvider);
   final resp = await dio.get(ApiEndpoints.debatesToday);
   final list = (resp.data['data'] as List? ?? resp.data as List);
