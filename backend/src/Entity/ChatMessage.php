@@ -13,7 +13,7 @@ class ChatMessage
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(type: 'bigint', unsigned: true)]
+    #[ORM\Column(type: 'bigint')]
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: ChatConversation::class, inversedBy: 'messages')]

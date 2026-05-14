@@ -16,7 +16,7 @@ class User
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(type: 'bigint', unsigned: true, options: ['unsigned' => true])]
+    #[ORM\Column(type: 'bigint')]
     private ?int $id = null;
 
     #[ORM\Column(type: 'string', length: 50, unique: true)]

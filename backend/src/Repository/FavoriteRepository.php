@@ -6,15 +6,12 @@ namespace App\Repository;
 
 use App\Entity\Favorite;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 
 class FavoriteRepository extends ServiceEntityRepository
 {
-    public function __construct(
-        ManagerRegistry $registry,
-        private readonly Connection $connection
-    ) {
+    public function __construct(ManagerRegistry $registry)
+    {
         parent::__construct($registry, Favorite::class);
     }
 
@@ -37,16 +34,13 @@ class FavoriteRepository extends ServiceEntityRepository
 
     public function upsert(int $userId, int $debateId): void
     {
-        $now = (new \DateTime())->format('Y-m-d H:i:s');
+        if ($this->findByUserAndDebate($userId, $debateId)) {
+            return; // ya existe, nada que hacer
+        }
 
-        $this->connection->executeStatement(
-            'INSERT IGNORE INTO favorites (user_id, debate_id, created_at)
-             VALUES (:userId, :debateId, :now)',
-            [
-                'userId'   => $userId,
-                'debateId' => $debateId,
-                'now'      => $now,
-            ]
+        $this->getEntityManager()->getConnection()->executeStatement(
+            'INSERT INTO favorites (user_id, debate_id, created_at) VALUES (?, ?, NOW())',
+            [$userId, $debateId]
         );
     }
 

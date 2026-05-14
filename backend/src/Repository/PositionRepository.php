@@ -6,15 +6,12 @@ namespace App\Repository;
 
 use App\Entity\Position;
 use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
-use Doctrine\DBAL\Connection;
 use Doctrine\Persistence\ManagerRegistry;
 
 class PositionRepository extends ServiceEntityRepository
 {
-    public function __construct(
-        ManagerRegistry $registry,
-        private readonly Connection $connection
-    ) {
+    public function __construct(ManagerRegistry $registry)
+    {
         parent::__construct($registry, Position::class);
     }
 
@@ -43,19 +40,19 @@ class PositionRepository extends ServiceEntityRepository
 
     public function upsert(int $userId, int $debateId, string $position): void
     {
-        $now = (new \DateTime())->format('Y-m-d H:i:s');
+        $em = $this->getEntityManager();
+        $existing = $this->findByUserAndDebate($userId, $debateId);
 
-        $this->connection->executeStatement(
-            'INSERT INTO positions (user_id, debate_id, position, created_at, updated_at)
-             VALUES (:userId, :debateId, :position, :now, :now)
-             ON DUPLICATE KEY UPDATE position = :position, updated_at = :now',
-            [
-                'userId'   => $userId,
-                'debateId' => $debateId,
-                'position' => $position,
-                'now'      => $now,
-            ]
-        );
+        if ($existing) {
+            $existing->setPosition($position);
+            $existing->setUpdatedAt(new \DateTime());
+            $em->flush();
+        } else {
+            $em->getConnection()->executeStatement(
+                'INSERT INTO positions (user_id, debate_id, position, created_at) VALUES (?, ?, ?, NOW())',
+                [$userId, $debateId, $position]
+            );
+        }
     }
 
     public function save(Position $position, bool $flush = true): void

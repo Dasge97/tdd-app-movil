@@ -13,7 +13,7 @@ class AdminAuditLog
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
-    #[ORM\Column(type: 'bigint', unsigned: true)]
+    #[ORM\Column(type: 'bigint')]
     private ?int $id = null;
 
     #[ORM\ManyToOne(targetEntity: User::class)]
@@ -26,7 +26,7 @@ class AdminAuditLog
     #[ORM\Column(type: 'string', length: 80)]
     private string $entityType;
 
-    #[ORM\Column(type: 'bigint', unsigned: true, nullable: true)]
+    #[ORM\Column(type: 'bigint', nullable: true)]
     private ?int $entityId = null;
 
     #[ORM\Column(type: 'json', nullable: true)]

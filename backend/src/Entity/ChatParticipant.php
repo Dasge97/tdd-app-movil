@@ -21,7 +21,7 @@ class ChatParticipant
     #[ORM\JoinColumn(nullable: false, onDelete: 'CASCADE')]
     private User $user;
 
-    #[ORM\Column(type: 'bigint', unsigned: true, nullable: true)]
+    #[ORM\Column(type: 'bigint', nullable: true)]
     private ?int $lastReadMsgId = null;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
