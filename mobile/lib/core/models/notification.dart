@@ -22,12 +22,12 @@ class AppNotification {
   factory AppNotification.fromJson(Map<String, dynamic> j) =>
       AppNotification(
         id: j['id'] as int,
-        userId: j['user_id'] as int,
+        userId: j['userId'] as int,
         type: j['type'] as String,
         title: j['title'] as String,
         body: j['body'] as String,
-        isRead: (j['is_read'] as bool?) ?? false,
-        createdAt: DateTime.parse(j['created_at'] as String),
+        isRead: (j['isRead'] as bool?) ?? false,
+        createdAt: DateTime.parse(j['createdAt'] as String),
         data: j['data'] as Map<String, dynamic>?,
       );
 }

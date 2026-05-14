@@ -15,9 +15,9 @@ class ChatMessage {
 
   factory ChatMessage.fromJson(Map<String, dynamic> j) => ChatMessage(
         id: j['id'] as int,
-        conversationId: j['conversation_id'] as int,
-        senderId: j['sender_id'] as int,
+        conversationId: j['conversationId'] as int,
+        senderId: j['senderId'] as int,
         content: j['content'] as String,
-        createdAt: DateTime.parse(j['created_at'] as String),
+        createdAt: DateTime.parse(j['createdAt'] as String),
       );
 }

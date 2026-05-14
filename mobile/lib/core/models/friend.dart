@@ -22,6 +22,6 @@ class Friend {
         addressee:
             User.fromJson(j['addressee'] as Map<String, dynamic>),
         status: j['status'] as String,
-        createdAt: DateTime.parse(j['created_at'] as String),
+        createdAt: DateTime.parse(j['createdAt'] as String),
       );
 }

@@ -53,8 +53,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         data: {'email': email, 'password': password},
       );
       await _storage.saveTokens(
-        resp.data['access_token'] as String,
-        resp.data['refresh_token'] as String,
+        resp.data['accessToken'] as String,
+        resp.data['refreshToken'] as String,
       );
       final userResp = await dio.get(ApiEndpoints.me);
       final user =
@@ -79,8 +79,8 @@ class AuthNotifier extends StateNotifier<AuthState> {
         },
       );
       await _storage.saveTokens(
-        resp.data['access_token'] as String,
-        resp.data['refresh_token'] as String,
+        resp.data['accessToken'] as String,
+        resp.data['refreshToken'] as String,
       );
       final userResp = await dio.get(ApiEndpoints.me);
       final user =

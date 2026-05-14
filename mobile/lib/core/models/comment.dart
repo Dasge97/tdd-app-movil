@@ -25,12 +25,12 @@ class Comment {
 
   factory Comment.fromJson(Map<String, dynamic> j) => Comment(
         id: j['id'] as int,
-        debateId: j['debate_id'] as int,
-        userId: j['user_id'] as int,
+        debateId: j['debateId'] as int,
+        userId: j['userId'] as int,
         score: (j['score'] as int?) ?? 0,
-        parentId: j['parent_id'] as int?,
+        parentId: j['parentId'] as int?,
         content: j['content'] as String,
-        createdAt: DateTime.parse(j['created_at'] as String),
+        createdAt: DateTime.parse(j['createdAt'] as String),
         user: User.fromJson(j['user'] as Map<String, dynamic>),
         replies: (j['replies'] as List?)
                 ?.map((r) => Comment.fromJson(r as Map<String, dynamic>))

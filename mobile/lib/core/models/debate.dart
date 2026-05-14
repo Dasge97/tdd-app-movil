@@ -32,14 +32,14 @@ class Debate {
         title: j['title'] as String,
         context: j['context'] as String,
         question: j['question'] as String?,
-        cardSummary: j['card_summary'] as String?,
-        sourceName: j['source_name'] as String?,
-        sourceUrl: j['source_url'] as String?,
-        authorType: (j['author_type'] as String?) ?? 'ai',
-        publishedAt: j['published_at'] != null
-            ? DateTime.parse(j['published_at'] as String)
+        cardSummary: j['cardSummary'] as String?,
+        sourceName: j['sourceName'] as String?,
+        sourceUrl: j['sourceUrl'] as String?,
+        authorType: (j['authorType'] as String?) ?? 'ai',
+        publishedAt: j['publishedAt'] != null
+            ? DateTime.parse(j['publishedAt'] as String)
             : null,
-        createdBy: User.fromJson(j['created_by'] as Map<String, dynamic>),
-        commentCount: j['comment_count'] as int?,
+        createdBy: User.fromJson(j['createdBy'] as Map<String, dynamic>),
+        commentCount: j['commentCount'] as int?,
       );
 }

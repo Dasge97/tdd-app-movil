@@ -33,11 +33,11 @@ final apiClientProvider = Provider<Dio>((ref) {
                 headers: {'Authorization': 'Bearer $refreshToken'}),
           );
           await storage.saveTokens(
-            resp.data['access_token'] as String,
-            resp.data['refresh_token'] as String,
+            resp.data['accessToken'] as String,
+            resp.data['refreshToken'] as String,
           );
           error.requestOptions.headers['Authorization'] =
-              'Bearer ${resp.data['access_token']}';
+              'Bearer ${resp.data['accessToken']}';
           final retry = await dio.fetch(error.requestOptions);
           return handler.resolve(retry);
         } catch (_) {

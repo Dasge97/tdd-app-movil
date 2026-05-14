@@ -19,13 +19,13 @@ class ChatConversation {
   factory ChatConversation.fromJson(Map<String, dynamic> j) =>
       ChatConversation(
         id: j['id'] as int,
-        dmKey: j['dm_key'] as String,
+        dmKey: j['dmKey'] as String,
         otherUser:
-            User.fromJson(j['other_user'] as Map<String, dynamic>),
-        lastMessage: j['last_message'] != null
+            User.fromJson(j['otherUser'] as Map<String, dynamic>),
+        lastMessage: j['lastMessage'] != null
             ? ChatMessage.fromJson(
-                j['last_message'] as Map<String, dynamic>)
+                j['lastMessage'] as Map<String, dynamic>)
             : null,
-        unreadCount: (j['unread_count'] as int?) ?? 0,
+        unreadCount: (j['unreadCount'] as int?) ?? 0,
       );
 }

@@ -25,6 +25,14 @@ class UserController extends AbstractController
     ) {
     }
 
+    #[Route('/me', name: 'api_users_me', methods: ['GET'])]
+    public function me(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->attributes->get('currentUser');
+        return new JsonResponse($this->userNormalizer->normalize($user));
+    }
+
     #[Route('/{username}', name: 'api_users_show', methods: ['GET'])]
     public function show(string $username): JsonResponse
     {
