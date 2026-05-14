@@ -1,0 +1,89 @@
+version: '3.9'
+
+services:
+  db:
+    image: mysql:8.0
+    container_name: tdd_db
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: root_pass
+      MYSQL_DATABASE: tdd_app
+      MYSQL_USER: tdd_user
+      MYSQL_PASSWORD: tdd_pass
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-proot_pass"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: tdd_backend
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      DATABASE_URL: "mysql://tdd_user:tdd_pass@db:3306/tdd_app?serverVersion=8.0.32&charset=utf8mb4"
+      APP_ENV: prod
+      APP_SECRET: ${APP_SECRET:-changeme}
+      JWT_SECRET: ${JWT_SECRET:-changeme_jwt}
+      WORKER_API_KEY: ${WORKER_API_KEY:-changeme_worker}
+      CORS_ALLOW_ORIGIN: "^https?://localhost(:[0-9]+)?$"
+    depends_on:
+      db:
+        condition: service_healthy
+    volumes:
+      - uploads:/var/www/html/public/uploads
+
+  backend-ws:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: tdd_backend_ws
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      DATABASE_URL: "mysql://tdd_user:tdd_pass@db:3306/tdd_app?serverVersion=8.0.32&charset=utf8mb4"
+      APP_ENV: prod
+      APP_SECRET: ${APP_SECRET:-changeme}
+      JWT_SECRET: ${JWT_SECRET:-changeme_jwt}
+      WS_PORT: 8080
+    depends_on:
+      db:
+        condition: service_healthy
+    command: ["php", "bin/console", "app:websocket-server"]
+
+  worker:
+    build:
+      context: ./worker
+      dockerfile: Dockerfile
+    container_name: tdd_worker
+    restart: unless-stopped
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: tdd_app
+      DB_USER: tdd_user
+      DB_PASSWORD: tdd_pass
+      BACKEND_API_BASE_URL: http://backend:3000
+      WORKER_API_KEY: ${WORKER_API_KEY:-changeme_worker}
+      OPENCODE_PROVIDER_ID: openai
+      OPENCODE_API_KEY: ${OPENAI_API_KEY:-}
+      OPENCODE_MODEL_ID: gpt-4o
+      LOG_LEVEL: info
+    depends_on:
+      db:
+        condition: service_healthy
+      backend:
+        condition: service_started
+
+volumes:
+  db_data:
+  uploads:

@@ -1,0 +1,17 @@
+{
+  "name": "tdd-worker",
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "start": "node src/index.js",
+    "dev": "node --watch src/index.js"
+  },
+  "dependencies": {
+    "mysql2": "^3.11.0",
+    "node-fetch": "^3.3.2",
+    "dotenv": "^16.4.5",
+    "uuid": "^10.0.0",
+    "winston": "^3.14.0",
+    "node-cron": "^3.0.3"
+  }
+}
