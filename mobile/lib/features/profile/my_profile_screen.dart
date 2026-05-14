@@ -14,7 +14,7 @@ final _favoritesProvider =
     FutureProvider<List<Debate>>((ref) async {
   final dio = ref.read(apiClientProvider);
   final resp = await dio.get(ApiEndpoints.myFavorites);
-  final list = (resp.data['data'] as List? ?? resp.data as List);
+  final List list = resp.data is List ? resp.data as List : ((resp.data as Map<String, dynamic>)['data'] as List? ?? []);
   return list
       .map((e) => Debate.fromJson(e as Map<String, dynamic>))
       .toList();

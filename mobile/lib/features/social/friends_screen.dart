@@ -12,7 +12,11 @@ import '../../shared/widgets/loading_indicator.dart';
 final _friendsProvider = FutureProvider<List<Friend>>((ref) async {
   final dio = ref.read(apiClientProvider);
   final resp = await dio.get(ApiEndpoints.friends);
-  final list = (resp.data['data'] as List? ?? resp.data as List);
+  final Map<String, dynamic> data = resp.data as Map<String, dynamic>;
+  final list = [
+    ...(data['friends'] as List? ?? []),
+    ...(data['pending'] as List? ?? []),
+  ];
   return list
       .map((e) => Friend.fromJson(e as Map<String, dynamic>))
       .toList();

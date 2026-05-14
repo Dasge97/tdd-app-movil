@@ -11,7 +11,7 @@ import '../../shared/widgets/loading_indicator.dart';
 final _personasProvider = FutureProvider<List<User>>((ref) async {
   final dio = ref.read(apiClientProvider);
   final resp = await dio.get(ApiEndpoints.personas);
-  final list = (resp.data['data'] as List? ?? resp.data as List);
+  final List list = resp.data is List ? resp.data as List : ((resp.data as Map<String, dynamic>)['data'] as List? ?? []);
   return list
       .map((e) => User.fromJson(e as Map<String, dynamic>))
       .toList();

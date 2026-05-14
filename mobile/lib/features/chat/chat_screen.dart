@@ -16,7 +16,7 @@ final _conversationDetailProvider =
         (ref, conversationId) async {
   final dio = ref.read(apiClientProvider);
   final resp = await dio.get(ApiEndpoints.conversations);
-  final list = (resp.data['data'] as List? ?? resp.data as List);
+  final List list = resp.data is List ? resp.data as List : ((resp.data as Map<String, dynamic>)['data'] as List? ?? []);
   final conversations = list
       .map((e) =>
           ChatConversation.fromJson(e as Map<String, dynamic>))
@@ -30,7 +30,7 @@ final _messagesProvider =
   final dio = ref.read(apiClientProvider);
   final resp = await dio.get(
       ApiEndpoints.conversationMessages(conversationId));
-  final list = (resp.data['data'] as List? ?? resp.data as List);
+  final List list = resp.data is List ? resp.data as List : ((resp.data as Map<String, dynamic>)['data'] as List? ?? []);
   return list
       .map((e) => ChatMessage.fromJson(e as Map<String, dynamic>))
       .toList();

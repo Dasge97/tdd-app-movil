@@ -51,9 +51,8 @@ class _SearchScreenState extends ConsumerState<SearchScreen> {
         ApiEndpoints.debatesSearch,
         queryParameters: {'q': q, 'page': 1},
       );
-      final list = (resp.data['data'] as List? ?? resp.data as List)
-          .map((e) => Debate.fromJson(e as Map<String, dynamic>))
-          .toList();
+      final List raw = resp.data is List ? resp.data as List : ((resp.data as Map<String, dynamic>)['data'] as List? ?? []);
+      final list = raw.map((e) => Debate.fromJson(e as Map<String, dynamic>)).toList();
       setState(() {
         _results = list;
         _loading = false;
