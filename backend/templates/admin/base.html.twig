@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TDD Admin{% endblock %}</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.5/font/bootstrap-icons.css">
+    <style>
+        body { background: #f8f9fa; }
+        .sidebar {
+            min-height: 100vh;
+            background: #1a1a2e;
+            color: #eee;
+            padding-top: 1rem;
+        }
+        .sidebar a {
+            color: #aaa;
+            text-decoration: none;
+            display: block;
+            padding: 0.6rem 1.2rem;
+            border-radius: 0.3rem;
+            margin: 0.1rem 0.5rem;
+        }
+        .sidebar a:hover, .sidebar a.active {
+            background: #16213e;
+            color: #fff;
+        }
+        .sidebar .brand {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: #fff;
+            padding: 0.5rem 1.2rem 1.5rem;
+            border-bottom: 1px solid #333;
+            margin-bottom: 1rem;
+        }
+        .main-content {
+            padding: 2rem;
+        }
+        .badge-running { background: #ffc107; color: #000; }
+        .badge-ok { background: #198754; }
+        .badge-error { background: #dc3545; }
+    </style>
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        {% block sidebar %}
+        <div class="col-md-2 sidebar">
+            <div class="brand"><i class="bi bi-shield-check"></i> TDD Admin</div>
+            <a href="/admin/dashboard" class="{{ app.request.pathInfo starts with '/admin/dashboard' ? 'active' : '' }}">
+                <i class="bi bi-speedometer2"></i> Dashboard
+            </a>
+            <a href="/admin/worker" class="{{ app.request.pathInfo starts with '/admin/worker' ? 'active' : '' }}">
+                <i class="bi bi-gear"></i> Worker
+            </a>
+            <a href="/admin/users" class="{{ app.request.pathInfo starts with '/admin/users' ? 'active' : '' }}">
+                <i class="bi bi-people"></i> Users
+            </a>
+            <a href="/admin/audit-log" class="{{ app.request.pathInfo starts with '/admin/audit' ? 'active' : '' }}">
+                <i class="bi bi-journal-text"></i> Audit Log
+            </a>
+            <hr style="border-color:#333">
+            <a href="/admin/logout">
+                <i class="bi bi-box-arrow-right"></i> Logout
+            </a>
+        </div>
+        {% endblock %}
+        <div class="col-md-10 main-content">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+</div>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+</body>
+</html>

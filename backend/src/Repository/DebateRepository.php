@@ -1,0 +1,100 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Repository;
+
+use App\Entity\Debate;
+use App\Entity\User;
+use Doctrine\Bundle\DoctrineBundle\Repository\ServiceEntityRepository;
+use Doctrine\Persistence\ManagerRegistry;
+
+class DebateRepository extends ServiceEntityRepository
+{
+    public function __construct(ManagerRegistry $registry)
+    {
+        parent::__construct($registry, Debate::class);
+    }
+
+    public function findTodaysDebates(): array
+    {
+        $today = new \DateTime();
+        $today->setTime(0, 0, 0);
+
+        return $this->createQueryBuilder('d')
+            ->where('d.dayDate = :today')
+            ->setParameter('today', $today->format('Y-m-d'))
+            ->orderBy('d.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findByDayDate(\DateTimeInterface $date): array
+    {
+        return $this->createQueryBuilder('d')
+            ->where('d.dayDate = :date')
+            ->setParameter('date', $date->format('Y-m-d'))
+            ->orderBy('d.createdAt', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findTrending(int $limit = 20): array
+    {
+        $since = new \DateTime('-48 hours');
+
+        return $this->createQueryBuilder('d')
+            ->leftJoin('d.comments', 'c')
+            ->where('c.createdAt >= :since OR c.createdAt IS NULL')
+            ->setParameter('since', $since)
+            ->groupBy('d.id')
+            ->orderBy('COUNT(c.id)', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findByPersona(User $persona, int $limit, int $offset): array
+    {
+        return $this->createQueryBuilder('d')
+            ->where('d.createdBy = :persona')
+            ->setParameter('persona', $persona)
+            ->orderBy('d.createdAt', 'DESC')
+            ->setMaxResults($limit)
+            ->setFirstResult($offset)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findRecentTitles(int $days): array
+    {
+        $since = new \DateTime("-{$days} days");
+
+        return $this->createQueryBuilder('d')
+            ->select('d.title')
+            ->where('d.createdAt >= :since')
+            ->setParameter('since', $since)
+            ->getQuery()
+            ->getSingleColumnResult();
+    }
+
+    public function search(string $query, int $limit, int $offset): array
+    {
+        return $this->createQueryBuilder('d')
+            ->where('d.title LIKE :q OR d.context LIKE :q OR d.cardSummary LIKE :q')
+            ->setParameter('q', '%' . $query . '%')
+            ->orderBy('d.createdAt', 'DESC')
+            ->setMaxResults($limit)
+            ->setFirstResult($offset)
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function save(Debate $debate, bool $flush = true): void
+    {
+        $this->getEntityManager()->persist($debate);
+        if ($flush) {
+            $this->getEntityManager()->flush();
+        }
+    }
+}
