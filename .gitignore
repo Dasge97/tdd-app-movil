@@ -1,0 +1,28 @@
+# Entornos — NUNCA commitear
+.env
+backend/.env.local
+backend/.env.local.php
+backend/.env.*.local
+worker/.env
+mobile/.env
+
+# Dependencias
+worker/node_modules/
+mobile/.pub-cache/
+
+# Logs y datos efímeros
+worker/logs/*.log
+worker/logs/*.jsonl
+docker-data/
+backend/var/
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDEs
+.idea/
+.vscode/
+*.swp
+*.swo
