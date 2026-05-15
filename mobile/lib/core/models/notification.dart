@@ -1,6 +1,6 @@
 class AppNotification {
   final int id;
-  final int userId;
+  final int? userId;
   final String type;
   final String title;
   final String body;
@@ -10,7 +10,7 @@ class AppNotification {
 
   const AppNotification({
     required this.id,
-    required this.userId,
+    this.userId,
     required this.type,
     required this.title,
     required this.body,
@@ -22,7 +22,7 @@ class AppNotification {
   factory AppNotification.fromJson(Map<String, dynamic> j) =>
       AppNotification(
         id: j['id'] as int,
-        userId: j['userId'] as int,
+        userId: j['userId'] as int?,
         type: j['type'] as String,
         title: j['title'] as String,
         body: j['body'] as String,

@@ -28,6 +28,16 @@ class CommentService
         return $this->commentRepository->findByDebate($debateId, $parentId, $excludeShadowBanned);
     }
 
+    /**
+     * Returns all comments for a debate (including replies), allowing the caller
+     * to group them into a parent → children structure efficiently.
+     */
+    public function getAllComments(int $debateId, User $currentUser): array
+    {
+        $excludeShadowBanned = !$currentUser->isShadowBanned();
+        return $this->commentRepository->findAllByDebate($debateId, $excludeShadowBanned);
+    }
+
     public function addComment(User $user, int $debateId, ?int $parentId, string $content): Comment
     {
         if (empty(trim($content))) {

@@ -58,6 +58,7 @@ class NotificationController extends AbstractController
     {
         return [
             'id'        => $n->getId(),
+            'userId'    => $n->getUser()->getId(),
             'type'      => $n->getType(),
             'title'     => $n->getTitle(),
             'body'      => $n->getBody(),

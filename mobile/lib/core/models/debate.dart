@@ -9,7 +9,10 @@ class Debate {
   final String? sourceName;
   final String? sourceUrl;
   final String? authorType;
+  final String? generationModel;
   final DateTime? publishedAt;
+  final DateTime? createdAt;
+  final DateTime? dayDate;
   final User createdBy;
   final int? commentCount;
 
@@ -22,7 +25,10 @@ class Debate {
     this.sourceName,
     this.sourceUrl,
     this.authorType = 'ai',
+    this.generationModel,
     this.publishedAt,
+    this.createdAt,
+    this.dayDate,
     required this.createdBy,
     this.commentCount,
   });
@@ -36,10 +42,18 @@ class Debate {
         sourceName: j['sourceName'] as String?,
         sourceUrl: j['sourceUrl'] as String?,
         authorType: (j['authorType'] as String?) ?? 'ai',
+        generationModel: j['generationModel'] as String?,
         publishedAt: j['publishedAt'] != null
             ? DateTime.parse(j['publishedAt'] as String)
             : null,
-        createdBy: User.fromJson(j['createdBy'] as Map<String, dynamic>),
+        createdAt: j['createdAt'] != null
+            ? DateTime.parse(j['createdAt'] as String)
+            : null,
+        dayDate: j['dayDate'] != null
+            ? DateTime.parse(j['dayDate'] as String)
+            : null,
+        createdBy:
+            User.fromJson(j['createdBy'] as Map<String, dynamic>),
         commentCount: j['commentCount'] as int?,
       );
 }

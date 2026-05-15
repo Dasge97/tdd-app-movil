@@ -48,6 +48,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
   Future<void> _sendRequest(String username) async {
     try {
       final dio = ref.read(apiClientProvider);
+      // Backend exposes POST /api/v1/friends with { "username": "..." }
       await dio.post(ApiEndpoints.friends,
           data: {'username': username});
       ref.invalidate(_friendsProvider);
@@ -62,6 +63,20 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(e.toString())));
       }
+    }
+  }
+
+  Future<void> _openConversationWith(int otherUserId) async {
+    try {
+      final dio = ref.read(apiClientProvider);
+      // Find or create the DM conversation, then navigate.
+      final resp = await dio.post('/api/v1/chat/conversations',
+          data: {'userId': otherUserId});
+      final convId = (resp.data as Map<String, dynamic>)['id'] as int;
+      if (mounted) context.push('/home/chat/$convId');
+    } catch (e) {
+      // Fallback: open the list if direct DM lookup isn't available
+      if (mounted) context.push('/home/conversations');
     }
   }
 
@@ -184,8 +199,7 @@ class _FriendsScreenState extends ConsumerState<FriendsScreen>
                                   maxLines: 1,
                                   overflow: TextOverflow.ellipsis)
                               : null,
-                          onTap: () =>
-                              context.push('/home/conversations'),
+                          onTap: () => _openConversationWith(other.id),
                         );
                       },
                     ),

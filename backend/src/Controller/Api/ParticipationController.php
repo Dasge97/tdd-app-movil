@@ -62,15 +62,39 @@ class ParticipationController extends AbstractController
     {
         /** @var User|null $user */
         $user = $request->attributes->get('currentUser');
-        $parentId = $request->query->has('parentId') ? (int) $request->query->get('parentId') : null;
 
         if ($user === null) {
             throw new \RuntimeException('UNAUTHORIZED: authentication required');
         }
 
-        $comments = $this->commentService->getComments($id, $parentId, $user);
+        // When a specific parent is requested, return a flat list of its direct replies
+        if ($request->query->has('parentId')) {
+            $parentId = (int) $request->query->get('parentId');
+            $comments = $this->commentService->getComments($id, $parentId, $user);
+            return new JsonResponse(array_map(fn(Comment $c) => $this->normalizeComment($c), $comments));
+        }
 
-        return new JsonResponse(array_map(fn(Comment $c) => $this->normalizeComment($c), $comments));
+        // Otherwise, return top-level comments with their replies nested (one level deep)
+        $all = $this->commentService->getAllComments($id, $user);
+        $byParent = [];
+        $topLevel = [];
+        foreach ($all as $c) {
+            $parent = $c->getParent();
+            if ($parent === null) {
+                $topLevel[] = $c;
+            } else {
+                $byParent[$parent->getId()][] = $c;
+            }
+        }
+
+        $result = [];
+        foreach ($topLevel as $tl) {
+            $replies = $byParent[$tl->getId()] ?? [];
+            $normalizedReplies = array_map(fn(Comment $r) => $this->normalizeComment($r), $replies);
+            $result[] = $this->normalizeComment($tl, $normalizedReplies);
+        }
+
+        return new JsonResponse($result);
     }
 
     #[Route('/comments/{id}/vote', name: 'api_comments_vote', methods: ['POST'], requirements: ['id' => '\d+'])]
@@ -86,7 +110,10 @@ class ParticipationController extends AbstractController
         return new JsonResponse(['success' => true]);
     }
 
-    private function normalizeComment(Comment $comment): array
+    /**
+     * @param array<int, array> $replies Already-normalized replies (optional)
+     */
+    private function normalizeComment(Comment $comment, array $replies = []): array
     {
         return [
             'id'        => $comment->getId(),
@@ -95,12 +122,14 @@ class ParticipationController extends AbstractController
             'createdAt' => $comment->getCreatedAt()->format(\DateTimeInterface::ATOM),
             'parentId'  => $comment->getParent()?->getId(),
             'debateId'  => $comment->getDebate()->getId(),
+            'userId'    => $comment->getUser()->getId(),
             'user'      => [
                 'id'          => $comment->getUser()->getId(),
                 'username'    => $comment->getUser()->getUsername(),
                 'avatarUrl'   => $comment->getUser()->getAvatarUrl(),
                 'isAiPersona' => $comment->getUser()->isAiPersona(),
             ],
+            'replies'   => $replies,
         ];
     }
 

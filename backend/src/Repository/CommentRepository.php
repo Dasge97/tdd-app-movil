@@ -15,6 +15,34 @@ class CommentRepository extends ServiceEntityRepository
         parent::__construct($registry, Comment::class);
     }
 
+    public function findAllByDebate(int $debateId, bool $excludeShadowBanned): array
+    {
+        $qb = $this->createQueryBuilder('c')
+            ->innerJoin('c.user', 'u')
+            ->where('c.debate = :debateId')
+            ->setParameter('debateId', $debateId);
+
+        if ($excludeShadowBanned) {
+            $qb->andWhere('u.isShadowBanned = :banned')
+               ->setParameter('banned', false);
+        }
+
+        return $qb->orderBy('c.score', 'DESC')
+            ->addOrderBy('c.createdAt', 'ASC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function countByDebate(int $debateId): int
+    {
+        return (int) $this->createQueryBuilder('c')
+            ->select('COUNT(c.id)')
+            ->where('c.debate = :debateId')
+            ->setParameter('debateId', $debateId)
+            ->getQuery()
+            ->getSingleScalarResult();
+    }
+
     public function findByDebate(int $debateId, ?int $parentId, bool $excludeShadowBanned): array
     {
         $qb = $this->createQueryBuilder('c')

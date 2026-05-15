@@ -6,6 +6,7 @@ namespace App\Controller\Api;
 
 use App\Entity\Debate;
 use App\Entity\User;
+use App\Repository\CommentRepository;
 use App\Service\DebateService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -16,7 +17,8 @@ use Symfony\Component\Routing\Attribute\Route;
 class DebateController extends AbstractController
 {
     public function __construct(
-        private readonly DebateService $debateService
+        private readonly DebateService $debateService,
+        private readonly CommentRepository $commentRepository
     ) {
     }
 
@@ -82,6 +84,7 @@ class DebateController extends AbstractController
             'authorType'      => $debate->getAuthorType(),
             'generationModel' => $debate->getGenerationModel(),
             'createdAt'       => $debate->getCreatedAt()->format(\DateTimeInterface::ATOM),
+            'commentCount'    => $this->commentRepository->countByDebate($debate->getId()),
             'createdBy'       => [
                 'id'               => $debate->getCreatedBy()->getId(),
                 'username'         => $debate->getCreatedBy()->getUsername(),

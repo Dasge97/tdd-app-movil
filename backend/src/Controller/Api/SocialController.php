@@ -6,6 +6,7 @@ namespace App\Controller\Api;
 
 use App\Entity\Friend;
 use App\Entity\User;
+use App\Repository\UserRepository;
 use App\Service\SocialService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -16,7 +17,8 @@ use Symfony\Component\Routing\Attribute\Route;
 class SocialController extends AbstractController
 {
     public function __construct(
-        private readonly SocialService $socialService
+        private readonly SocialService $socialService,
+        private readonly UserRepository $userRepository
     ) {
     }
 
@@ -40,6 +42,28 @@ class SocialController extends AbstractController
         /** @var User $user */
         $user = $request->attributes->get('currentUser');
         $friend = $this->socialService->sendFriendRequest($user, $userId);
+
+        return new JsonResponse($this->normalizeFriend($friend), 201);
+    }
+
+    #[Route('/friends', name: 'api_friends_request_by_username', methods: ['POST'])]
+    public function sendRequestByUsername(Request $request): JsonResponse
+    {
+        /** @var User $user */
+        $user = $request->attributes->get('currentUser');
+        $data = json_decode($request->getContent(), true) ?? [];
+        $username = trim((string) ($data['username'] ?? ''));
+
+        if ($username === '') {
+            throw new \InvalidArgumentException('username is required');
+        }
+
+        $target = $this->userRepository->findByUsername($username);
+        if ($target === null) {
+            throw new \RuntimeException('NOT_FOUND: user not found');
+        }
+
+        $friend = $this->socialService->sendFriendRequest($user, $target->getId());
 
         return new JsonResponse($this->normalizeFriend($friend), 201);
     }

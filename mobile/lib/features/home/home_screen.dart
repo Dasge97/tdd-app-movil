@@ -6,6 +6,7 @@ import '../../core/api/api_endpoints.dart';
 import '../../core/models/debate.dart';
 import '../../shared/widgets/error_view.dart';
 import '../../shared/widgets/loading_indicator.dart';
+import '../chat/conversations_screen.dart';
 import '../notifications/notifications_screen.dart';
 import '../profile/my_profile_screen.dart';
 import '../search/search_screen.dart';
@@ -35,6 +36,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
   final List<Widget> _tabs = const [
     _DebateFeedTab(),
     SearchScreen(),
+    ConversationsScreen(),
     NotificationsScreen(),
     FriendsScreen(),
     MyProfileScreen(),
@@ -70,6 +72,7 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _currentIndex,
         onTap: (i) => setState(() => _currentIndex = i),
+        type: BottomNavigationBarType.fixed,
         items: const [
           BottomNavigationBarItem(
             icon: Icon(Icons.home_outlined),
@@ -80,6 +83,11 @@ class _HomeScreenState extends ConsumerState<HomeScreen> {
             icon: Icon(Icons.search_outlined),
             activeIcon: Icon(Icons.search),
             label: 'Buscar',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat_bubble_outline),
+            activeIcon: Icon(Icons.chat_bubble),
+            label: 'Mensajes',
           ),
           BottomNavigationBarItem(
             icon: Icon(Icons.notifications_outlined),

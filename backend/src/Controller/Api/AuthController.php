@@ -65,10 +65,18 @@ class AuthController extends AbstractController
     public function logout(Request $request): JsonResponse
     {
         $authHeader = $request->headers->get('Authorization', '');
-        $token = str_starts_with($authHeader, 'Bearer ') ? substr($authHeader, 7) : '';
+        $accessToken = str_starts_with($authHeader, 'Bearer ') ? substr($authHeader, 7) : '';
 
-        if (!empty($token)) {
-            $this->authService->logout($token);
+        if (!empty($accessToken)) {
+            $this->authService->logout($accessToken);
+        }
+
+        // Also revoke the refresh token if provided, so a stolen refresh token
+        // cannot be used to mint new access tokens after logout.
+        $data = json_decode($request->getContent(), true) ?? [];
+        $refreshToken = $data['refreshToken'] ?? '';
+        if (!empty($refreshToken)) {
+            $this->authService->logout($refreshToken);
         }
 
         return new JsonResponse(['message' => 'logged out']);

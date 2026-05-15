@@ -8,12 +8,15 @@ use App\Entity\User;
 
 class UserNormalizer
 {
-    public function normalize(User $user): array
+    /**
+     * Normalizes a User. Public data only by default; pass $includePrivate=true to expose
+     * email and other private fields (use only for /me endpoints).
+     */
+    public function normalize(User $user, bool $includePrivate = false): array
     {
-        return [
+        $data = [
             'id'               => $user->getId(),
             'username'         => $user->getUsername(),
-            'email'            => $user->getEmail(),
             'bio'              => $user->getBio(),
             'avatarUrl'        => $user->getAvatarUrl(),
             'location'         => $user->getLocation(),
@@ -28,6 +31,12 @@ class UserNormalizer
             'createdAt'        => $user->getCreatedAt()->format(\DateTimeInterface::ATOM),
             'updatedAt'        => $user->getUpdatedAt()?->format(\DateTimeInterface::ATOM),
         ];
+
+        if ($includePrivate) {
+            $data['email'] = $user->getEmail();
+        }
+
+        return $data;
     }
 
     public function normalizeMany(array $users): array

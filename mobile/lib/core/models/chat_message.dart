@@ -13,11 +13,21 @@ class ChatMessage {
     required this.createdAt,
   });
 
-  factory ChatMessage.fromJson(Map<String, dynamic> j) => ChatMessage(
-        id: j['id'] as int,
-        conversationId: j['conversationId'] as int,
-        senderId: j['senderId'] as int,
-        content: j['content'] as String,
-        createdAt: DateTime.parse(j['createdAt'] as String),
-      );
+  factory ChatMessage.fromJson(Map<String, dynamic> j) {
+    final int senderId;
+    if (j['senderId'] is int) {
+      senderId = j['senderId'] as int;
+    } else if (j['sender'] is Map<String, dynamic>) {
+      senderId = (j['sender'] as Map<String, dynamic>)['id'] as int;
+    } else {
+      senderId = 0;
+    }
+    return ChatMessage(
+      id: (j['id'] as int?) ?? 0,
+      conversationId: j['conversationId'] as int,
+      senderId: senderId,
+      content: j['content'] as String,
+      createdAt: DateTime.parse(j['createdAt'] as String),
+    );
+  }
 }

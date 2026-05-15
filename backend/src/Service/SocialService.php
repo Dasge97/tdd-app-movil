@@ -60,9 +60,9 @@ class SocialService
         return $friend;
     }
 
-    public function acceptFriendRequest(User $user, int $friendId): Friend
+    public function acceptFriendRequest(User $user, int $requesterUserId): Friend
     {
-        $relation = $this->friendRepository->find($friendId);
+        $relation = $this->friendRepository->findRelation($requesterUserId, $user->getId());
 
         if ($relation === null) {
             throw new \RuntimeException('NOT_FOUND: friend request not found');
@@ -83,9 +83,9 @@ class SocialService
         return $relation;
     }
 
-    public function rejectFriendRequest(User $user, int $friendId): Friend
+    public function rejectFriendRequest(User $user, int $requesterUserId): Friend
     {
-        $relation = $this->friendRepository->find($friendId);
+        $relation = $this->friendRepository->findRelation($requesterUserId, $user->getId());
 
         if ($relation === null) {
             throw new \RuntimeException('NOT_FOUND: friend request not found');

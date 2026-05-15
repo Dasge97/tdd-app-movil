@@ -16,16 +16,24 @@ class ChatConversation {
     this.unreadCount = 0,
   });
 
-  factory ChatConversation.fromJson(Map<String, dynamic> j) =>
-      ChatConversation(
-        id: j['id'] as int,
-        dmKey: j['dmKey'] as String,
-        otherUser:
-            User.fromJson(j['otherUser'] as Map<String, dynamic>),
-        lastMessage: j['lastMessage'] != null
-            ? ChatMessage.fromJson(
-                j['lastMessage'] as Map<String, dynamic>)
-            : null,
-        unreadCount: (j['unreadCount'] as int?) ?? 0,
-      );
+  factory ChatConversation.fromJson(Map<String, dynamic> j) {
+    final otherUserRaw = j['otherUser'];
+    final User other;
+    if (otherUserRaw is Map<String, dynamic>) {
+      other = User.fromJson(otherUserRaw);
+    } else {
+      // Fallback: derive from participants array if backend doesn't provide otherUser
+      other = const User(id: 0, username: '?');
+    }
+
+    return ChatConversation(
+      id: j['id'] as int,
+      dmKey: j['dmKey'] as String,
+      otherUser: other,
+      lastMessage: j['lastMessage'] != null
+          ? ChatMessage.fromJson(j['lastMessage'] as Map<String, dynamic>)
+          : null,
+      unreadCount: (j['unreadCount'] as int?) ?? 0,
+    );
+  }
 }

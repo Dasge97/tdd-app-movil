@@ -4,9 +4,9 @@ declare(strict_types=1);
 
 namespace App\Command;
 
-use App\Service\ChatService;
-use App\Service\JwtService;
+use App\Repository\ChatConversationRepository;
 use App\Repository\UserRepository;
+use App\Service\JwtService;
 use Ratchet\RFC6455\Handshake\RequestVerifier;
 use Ratchet\RFC6455\Handshake\ServerNegotiator;
 use Ratchet\RFC6455\Messaging\MessageBuffer;
@@ -35,7 +35,7 @@ class WebSocketServerCommand extends Command
     public function __construct(
         private readonly JwtService $jwtService,
         private readonly UserRepository $userRepository,
-        private readonly ChatService $chatService,
+        private readonly ChatConversationRepository $conversationRepository,
         private readonly int $wsPort
     ) {
         parent::__construct();
@@ -193,58 +193,69 @@ class WebSocketServerCommand extends Command
         }
 
         if ($type === 'chat') {
+            // Real-time relay only. Persistence is handled by the HTTP endpoint
+            // (POST /chat/conversations/{id}/messages). This handler validates
+            // participation and broadcasts the message to other participants.
             $conversationId = (int) ($data['conversationId'] ?? 0);
-            $content = $data['content'] ?? '';
+            $content = (string) ($data['content'] ?? '');
+            $messageId = isset($data['messageId']) ? (int) $data['messageId'] : null;
+            $createdAt = (string) ($data['createdAt'] ?? (new \DateTime())->format(\DateTimeInterface::ATOM));
 
-            if ($conversationId === 0 || empty($content)) {
+            if ($conversationId === 0 || trim($content) === '') {
                 return;
             }
 
             try {
-                $sender = $this->userRepository->find($userId);
-                if ($sender === null) {
+                $conversation = $this->conversationRepository->find($conversationId);
+                if ($conversation === null) {
                     return;
                 }
 
-                $message = $this->chatService->sendMessage($sender, $conversationId, $content);
-
-                // Find other participants and notify them
-                $conversation = $message->getConversation();
-                foreach ($conversation->getParticipants() as $participant) {
-                    $recipientId = $participant->getUser()->getId();
-                    if ($recipientId !== $userId && isset($this->userMap[$recipientId])) {
-                        $recipientResourceId = $this->userMap[$recipientId];
-                        if (isset($this->connections[$recipientResourceId])) {
-                            $recipientConn = $this->connections[$recipientResourceId]['conn'];
-                            $notification = json_encode([
-                                'type'    => 'chat_message',
-                                'message' => [
-                                    'id'             => $message->getId(),
-                                    'content'        => $message->getContent(),
-                                    'conversationId' => $conversationId,
-                                    'createdAt'      => $message->getCreatedAt()->format(\DateTimeInterface::ATOM),
-                                    'sender'         => [
-                                        'id'       => $sender->getId(),
-                                        'username' => $sender->getUsername(),
-                                    ],
-                                ],
-                            ]);
-                            $frame = new Frame($notification, true, Frame::OP_TEXT);
-                            $recipientConn->write($frame->getContents());
-                        }
+                $sender = null;
+                $isParticipant = false;
+                foreach ($conversation->getParticipants() as $p) {
+                    if ($p->getUser()->getId() === $userId) {
+                        $isParticipant = true;
+                        $sender = $p->getUser();
+                        break;
                     }
                 }
 
-                // Confirm to sender
-                $confirm = json_encode([
-                    'type'      => 'message_sent',
-                    'messageId' => $message->getId(),
-                ]);
-                $frame = new Frame($confirm, true, Frame::OP_TEXT);
-                $conn->write($frame->getContents());
+                if (!$isParticipant || $sender === null) {
+                    return;
+                }
+
+                // Broadcast to other participants
+                foreach ($conversation->getParticipants() as $participant) {
+                    $recipientId = $participant->getUser()->getId();
+                    if ($recipientId === $userId || !isset($this->userMap[$recipientId])) {
+                        continue;
+                    }
+                    $recipientResourceId = $this->userMap[$recipientId];
+                    if (!isset($this->connections[$recipientResourceId])) {
+                        continue;
+                    }
+                    $recipientConn = $this->connections[$recipientResourceId]['conn'];
+                    $notification = json_encode([
+                        'type'    => 'chat_message',
+                        'message' => [
+                            'id'             => $messageId,
+                            'content'        => $content,
+                            'conversationId' => $conversationId,
+                            'createdAt'      => $createdAt,
+                            'senderId'       => $sender->getId(),
+                            'sender'         => [
+                                'id'       => $sender->getId(),
+                                'username' => $sender->getUsername(),
+                            ],
+                        ],
+                    ]);
+                    $frame = new Frame($notification, true, Frame::OP_TEXT);
+                    $recipientConn->write($frame->getContents());
+                }
 
             } catch (\Exception $e) {
-                $io->writeln("Chat error: " . $e->getMessage());
+                $io->writeln("Chat relay error: " . $e->getMessage());
             }
         }
     }

@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Controller\Api;
 
-use App\Entity\Debate;
 use App\Entity\Favorite;
 use App\Entity\User;
 use App\Repository\UserRepository;
@@ -30,11 +29,11 @@ class UserController extends AbstractController
     {
         /** @var User $user */
         $user = $request->attributes->get('currentUser');
-        return new JsonResponse($this->userNormalizer->normalize($user));
+        return new JsonResponse($this->userNormalizer->normalize($user, includePrivate: true));
     }
 
     #[Route('/{username}', name: 'api_users_show', methods: ['GET'])]
-    public function show(string $username): JsonResponse
+    public function show(string $username, Request $request): JsonResponse
     {
         $user = $this->userRepository->findByUsername($username);
 
@@ -42,7 +41,11 @@ class UserController extends AbstractController
             throw new \RuntimeException('NOT_FOUND: user not found');
         }
 
-        return new JsonResponse($this->userNormalizer->normalize($user));
+        /** @var User|null $current */
+        $current = $request->attributes->get('currentUser');
+        $isSelf = $current !== null && $current->getId() === $user->getId();
+
+        return new JsonResponse($this->userNormalizer->normalize($user, includePrivate: $isSelf));
     }
 
     #[Route('/me', name: 'api_users_me_update', methods: ['PUT'])]
@@ -67,7 +70,7 @@ class UserController extends AbstractController
 
         $this->userRepository->save($user);
 
-        return new JsonResponse($this->userNormalizer->normalize($user));
+        return new JsonResponse($this->userNormalizer->normalize($user, includePrivate: true));
     }
 
     #[Route('/me/favorites', name: 'api_users_me_favorites', methods: ['GET'])]

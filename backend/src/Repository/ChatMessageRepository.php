@@ -27,6 +27,36 @@ class ChatMessageRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    public function findLastByConversation(int $conversationId): ?ChatMessage
+    {
+        $result = $this->createQueryBuilder('m')
+            ->where('m.conversation = :conversationId')
+            ->setParameter('conversationId', $conversationId)
+            ->orderBy('m.createdAt', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return $result instanceof ChatMessage ? $result : null;
+    }
+
+    public function countUnread(int $conversationId, int $userId, ?int $lastReadMsgId): int
+    {
+        $qb = $this->createQueryBuilder('m')
+            ->select('COUNT(m.id)')
+            ->where('m.conversation = :conversationId')
+            ->andWhere('m.sender != :userId')
+            ->setParameter('conversationId', $conversationId)
+            ->setParameter('userId', $userId);
+
+        if ($lastReadMsgId !== null) {
+            $qb->andWhere('m.id > :lastReadMsgId')
+               ->setParameter('lastReadMsgId', $lastReadMsgId);
+        }
+
+        return (int) $qb->getQuery()->getSingleScalarResult();
+    }
+
     public function save(ChatMessage $message, bool $flush = true): void
     {
         $this->getEntityManager()->persist($message);

@@ -76,8 +76,7 @@ class _DebateDetailScreenState
         ApiEndpoints.debateComments(widget.debateId),
         data: {
           'content': text,
-          if (_replyingTo != null)
-            'parent_id': _replyingTo!.id,
+          if (_replyingTo != null) 'parentId': _replyingTo!.id,
         },
       );
       _commentCtrl.clear();
@@ -93,11 +92,12 @@ class _DebateDetailScreenState
   }
 
   Future<void> _vote(Comment comment, String direction) async {
+    final value = direction == 'upvote' ? 1 : -1;
     try {
       final dio = ref.read(apiClientProvider);
       await dio.post(
         ApiEndpoints.commentVote(comment.id),
-        data: {'direction': direction},
+        data: {'value': value},
       );
       ref.invalidate(_commentsProvider(widget.debateId));
     } catch (_) {}

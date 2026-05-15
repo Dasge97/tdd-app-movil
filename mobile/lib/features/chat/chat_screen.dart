@@ -15,13 +15,9 @@ final _conversationDetailProvider =
     FutureProvider.family<ChatConversation, int>(
         (ref, conversationId) async {
   final dio = ref.read(apiClientProvider);
-  final resp = await dio.get(ApiEndpoints.conversations);
-  final List list = resp.data is List ? resp.data as List : ((resp.data as Map<String, dynamic>)['data'] as List? ?? []);
-  final conversations = list
-      .map((e) =>
-          ChatConversation.fromJson(e as Map<String, dynamic>))
-      .toList();
-  return conversations.firstWhere((c) => c.id == conversationId);
+  final resp = await dio.get(
+      '${ApiEndpoints.conversations}/$conversationId');
+  return ChatConversation.fromJson(resp.data as Map<String, dynamic>);
 });
 
 final _messagesProvider =
@@ -61,17 +57,16 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     final ws = ref.read(wsClientProvider);
     await ws.connect();
     _wsSub = ws.messages.listen((data) {
-      if (data['type'] == 'chat' &&
-          data['conversationId'] == widget.conversationId) {
-        final msg = ChatMessage(
-          id: data['id'] as int? ?? 0,
-          conversationId: widget.conversationId,
-          senderId: data['senderId'] as int? ?? 0,
-          content: data['content'] as String,
-          createdAt: DateTime.now(),
-        );
+      if (data['type'] != 'chat_message') return;
+      final payload = data['message'] as Map<String, dynamic>?;
+      if (payload == null) return;
+      if (payload['conversationId'] != widget.conversationId) return;
+      try {
+        final msg = ChatMessage.fromJson(payload);
         setState(() => _localMessages.add(msg));
         _scrollToBottom();
+      } catch (_) {
+        // Ignore malformed frames
       }
     });
   }
@@ -102,26 +97,41 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     if (text.isEmpty) return;
     _ctrl.clear();
     final me = ref.read(authProvider).user;
-    final msg = ChatMessage(
+
+    // Optimistic temp message (negative id so it can be deduped vs. the persisted one)
+    final tempMsg = ChatMessage(
       id: -DateTime.now().millisecondsSinceEpoch,
       conversationId: widget.conversationId,
       senderId: me?.id ?? 0,
       content: text,
       createdAt: DateTime.now(),
     );
-    setState(() => _localMessages.add(msg));
+    setState(() => _localMessages.add(tempMsg));
     _scrollToBottom();
+
     try {
       final dio = ref.read(apiClientProvider);
-      await dio.post(
+      final resp = await dio.post(
         ApiEndpoints.conversationMessages(widget.conversationId),
         data: {'content': text},
       );
-      // Also send via WebSocket for real-time delivery
-      ref
-          .read(wsClientProvider)
-          .sendChatMessage(widget.conversationId, text);
+      final persisted = ChatMessage.fromJson(resp.data as Map<String, dynamic>);
+
+      setState(() {
+        _localMessages.removeWhere((m) => m.id == tempMsg.id);
+        _localMessages.add(persisted);
+      });
+
+      // Notify other participants in real time (WS does NOT persist again)
+      ref.read(wsClientProvider).sendChatMessage(
+            widget.conversationId,
+            text,
+            messageId: persisted.id,
+            createdAt: persisted.createdAt,
+          );
     } catch (e) {
+      // Roll back optimistic UI on failure
+      setState(() => _localMessages.removeWhere((m) => m.id == tempMsg.id));
       if (mounted) {
         ScaffoldMessenger.of(context)
             .showSnackBar(SnackBar(content: Text(e.toString())));

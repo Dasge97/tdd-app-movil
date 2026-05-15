@@ -1,3 +1,4 @@
+import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../api/api_client.dart';
 import '../api/api_endpoints.dart';
@@ -29,18 +30,32 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> _init() async {
     state = state.copyWith(isLoading: true);
+    final token = await _storage.getAccessToken();
+    if (token == null) {
+      state = const AuthState();
+      return;
+    }
     try {
-      final token = await _storage.getAccessToken();
-      if (token == null) {
-        state = const AuthState();
-        return;
-      }
       final dio = _ref.read(apiClientProvider);
       final resp = await dio.get(ApiEndpoints.me);
       final user = User.fromJson(resp.data as Map<String, dynamic>);
       state = AuthState(user: user);
+    } on DioException catch (e) {
+      // Only log the user out when the server explicitly rejects credentials.
+      // Network/timeout errors keep the existing session so a poor connection
+      // doesn't kick the user back to login.
+      final status = e.response?.statusCode;
+      if (status == 401 || status == 403) {
+        await _storage.clear();
+        state = const AuthState();
+      } else {
+        state = state.copyWith(
+          isLoading: false,
+          error: 'No se pudo verificar la sesión. Reintenta más tarde.',
+        );
+      }
     } catch (_) {
-      state = const AuthState();
+      state = state.copyWith(isLoading: false, error: null);
     }
   }
 
@@ -94,7 +109,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
   Future<void> logout() async {
     try {
       final dio = _ref.read(apiClientProvider);
-      await dio.post(ApiEndpoints.logout);
+      final refreshToken = await _storage.getRefreshToken();
+      await dio.post(
+        ApiEndpoints.logout,
+        data: refreshToken != null ? {'refreshToken': refreshToken} : null,
+      );
     } catch (_) {}
     await _storage.clear();
     state = const AuthState();
