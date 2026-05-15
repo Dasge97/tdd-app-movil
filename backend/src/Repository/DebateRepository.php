@@ -78,6 +78,33 @@ class DebateRepository extends ServiceEntityRepository
             ->getSingleColumnResult();
     }
 
+    public function findRecentForWorker(int $days): array
+    {
+        $since = new \DateTime("-{$days} days");
+
+        return $this->createQueryBuilder('d')
+            ->select('d.title', 'd.dayDate')
+            ->where('d.dayDate >= :since')
+            ->setParameter('since', $since->format('Y-m-d'))
+            ->orderBy('d.dayDate', 'DESC')
+            ->getQuery()
+            ->getResult();
+    }
+
+    public function findLastDateByPersona(User $persona): ?\DateTimeInterface
+    {
+        $row = $this->createQueryBuilder('d')
+            ->select('d.dayDate')
+            ->where('d.createdBy = :persona')
+            ->setParameter('persona', $persona)
+            ->orderBy('d.dayDate', 'DESC')
+            ->setMaxResults(1)
+            ->getQuery()
+            ->getOneOrNullResult();
+
+        return $row ? $row['dayDate'] : null;
+    }
+
     public function search(string $query, int $limit, int $offset): array
     {
         return $this->createQueryBuilder('d')

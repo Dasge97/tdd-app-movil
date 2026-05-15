@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>TDD · Tu Debate Diario</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;0,6..72,600;1,6..72,400;1,6..72,500&family=Geist:wght@300;400;500;600&family=Geist+Mono:wght@400;500&display=swap" />
+
+<link rel="stylesheet" href="styles.css" />
+
+<style>
+  html, body {
+    margin: 0; padding: 0;
+    background: #f0eee9;
+    font-family: 'Geist', system-ui, sans-serif;
+  }
+  /* Tone down DC labels for dark-themed cards */
+  .dc-header .dc-labeltext .dc-editable { font-family: 'Geist Mono', monospace; font-size: 11px; letter-spacing: 0.04em; }
+</style>
+</head>
+<body>
+<div id="root"></div>
+
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+<script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+
+<script type="text/babel" src="ios-frame.jsx"></script>
+<script type="text/babel" src="design-canvas.jsx"></script>
+<script type="text/babel" src="components.jsx"></script>
+<script type="text/babel" src="screens-a.jsx"></script>
+<script type="text/babel" src="screens-b.jsx"></script>
+
+<script type="text/babel">
+  const AB_W = 390;
+  const AB_H = 780;
+
+  function App() {
+    return (
+      <DesignCanvas>
+        <DCSection id="auth" title="Acceso" subtitle="Login y registro — punto de entrada al producto.">
+          <DCArtboard id="login"    label="01 · Login"    width={AB_W} height={AB_H}><LoginScreen /></DCArtboard>
+          <DCArtboard id="register" label="02 · Registro" width={AB_W} height={AB_H}><RegisterScreen /></DCArtboard>
+        </DCSection>
+
+        <DCSection id="feed" title="Feed y detalle" subtitle="Lo que ve un usuario al abrir la app y al entrar en un debate.">
+          <DCArtboard id="home"   label="03 · Home"            width={AB_W} height={AB_H}><HomeScreen /></DCArtboard>
+          <DCArtboard id="detail" label="04 · Detalle debate"  width={AB_W} height={AB_H}><DebateDetailScreen /></DCArtboard>
+        </DCSection>
+
+        <DCSection id="profiles" title="Perfiles IA" subtitle="Los 8 perfiles son el eje editorial. Listado y ficha individual.">
+          <DCArtboard id="profiles-list" label="05 · Perfiles IA"      width={AB_W} height={AB_H}><ProfilesScreen /></DCArtboard>
+          <DCArtboard id="character"     label="06 · Perfil de Nyx"    width={AB_W} height={AB_H}><CharacterScreen /></DCArtboard>
+        </DCSection>
+
+        <DCSection id="social" title="Búsqueda y social" subtitle="Búsqueda, mensajes, conversación 1‑a‑1 y avisos.">
+          <DCArtboard id="search"   label="07 · Búsqueda · resultados" width={AB_W} height={AB_H}><SearchScreen /></DCArtboard>
+          <DCArtboard id="search-empty" label="07b · Búsqueda · vacío" width={AB_W} height={AB_H}><SearchScreen empty /></DCArtboard>
+          <DCArtboard id="messages" label="08 · Mensajes"              width={AB_W} height={AB_H}><MessagesScreen /></DCArtboard>
+          <DCArtboard id="chat"     label="09 · Chat"                  width={AB_W} height={AB_H}><ChatScreen /></DCArtboard>
+          <DCArtboard id="notif"    label="10 · Notificaciones"        width={AB_W} height={AB_H}><NotificationsScreen /></DCArtboard>
+        </DCSection>
+
+        <DCSection id="friends" title="Amigos" subtitle="Lista, solicitudes y diálogo de añadir amigo.">
+          <DCArtboard id="friends-list" label="11a · Amigos"           width={AB_W} height={AB_H}><FriendsScreen tab="amigos" /></DCArtboard>
+          <DCArtboard id="friends-req"  label="11b · Solicitudes"      width={AB_W} height={AB_H}><FriendsScreen tab="solicitudes" /></DCArtboard>
+          <DCArtboard id="friends-add"  label="11c · Añadir amigo"     width={AB_W} height={AB_H}><FriendsScreen tab="amigos" dialog /></DCArtboard>
+        </DCSection>
+
+        <DCSection id="me" title="Mi cuenta y propuestas" subtitle="Perfil propio, edición de perfil y propuesta de un nuevo debate.">
+          <DCArtboard id="me"     label="12 · Mi perfil"     width={AB_W} height={AB_H}><MyProfileScreen /></DCArtboard>
+          <DCArtboard id="edit"   label="13 · Editar perfil" width={AB_W} height={AB_H}><EditProfileScreen /></DCArtboard>
+          <DCArtboard id="propose" label="14 · Proponer debate" width={AB_W} height={AB_H}><ProposeScreen /></DCArtboard>
+        </DCSection>
+      </DesignCanvas>
+    );
+  }
+
+  ReactDOM.createRoot(document.getElementById('root')).render(<App />);
+</script>
+</body>
+</html>

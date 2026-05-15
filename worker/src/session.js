@@ -1,106 +1,90 @@
-import fetch from 'node-fetch';
+import { spawn } from 'child_process';
 
-const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
-const PROMPT_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutes per prompt
+const PROMPT_TIMEOUT_MS = 10 * 60 * 1000; // 10 minutos por prompt
 
 /**
- * Calls the OpenAI Chat Completions API with the full conversation history.
- * Maintains context across multiple prompts by appending to conversationHistory.
+ * Calls the local AI CLI passing the prompt via stdin.
+ * Uses --continue on turns 2+ so the CLI maintains the session context itself.
  *
- * @param {string} prompt               The user message for this turn
- * @param {Array}  conversationHistory  Array of {role, content} from previous turns
- * @param {Object} logger               Winston logger instance
- * @returns {Promise<string>}           The assistant's response text
+ * Configured via env vars:
+ *   AI_CLI_COMMAND  — executable name (default: "claude")
+ *   AI_CLI_ARGS     — extra args added to every call (default: "--no-markdown")
  */
-async function callOpenAI(prompt, conversationHistory, logger) {
-  const apiKey = process.env.OPENCODE_API_KEY;
-  if (!apiKey) {
-    throw new Error('OPENCODE_API_KEY no está configurada');
-  }
+async function callCli(prompt, continueSession, logger) {
+  const command = process.env.AI_CLI_COMMAND || 'claude';
+  const extraArgs = (process.env.AI_CLI_ARGS || '--no-markdown').split(/\s+/).filter(Boolean);
 
-  const model = process.env.OPENCODE_MODEL_ID || 'gpt-4o';
+  const args = ['-p', ...extraArgs];
+  if (continueSession) args.push('--continue');
 
-  const messages = [
-    ...conversationHistory,
-    { role: 'user', content: prompt },
-  ];
+  logger.debug(`CLI: ${command} ${args.join(' ')}`);
 
-  logger.debug(`Llamando OpenAI con modelo ${model}, ${messages.length} mensajes en contexto`);
-
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), PROMPT_TIMEOUT_MS);
-
-  let response;
-  try {
-    response = await fetch(OPENAI_API_URL, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${apiKey}`,
-      },
-      body: JSON.stringify({
-        model,
-        messages,
-        temperature: 0.8,
-        max_tokens: 4096,
-      }),
-      signal: controller.signal,
+  return new Promise((resolve, reject) => {
+    const proc = spawn(command, args, {
+      stdio: ['pipe', 'pipe', 'pipe'],
+      shell: false,
     });
-  } finally {
-    clearTimeout(timeoutId);
-  }
 
-  if (!response.ok) {
-    const body = await response.text();
-    throw new Error(`OpenAI API error ${response.status}: ${body}`);
-  }
+    let output = '';
+    let errorOutput = '';
 
-  const data = await response.json();
+    proc.stdout.on('data', (chunk) => { output += chunk.toString(); });
+    proc.stderr.on('data', (chunk) => { errorOutput += chunk.toString(); });
 
-  if (!data.choices || data.choices.length === 0) {
-    throw new Error('OpenAI devolvió una respuesta vacía (sin choices)');
-  }
+    proc.stdin.write(prompt, 'utf8');
+    proc.stdin.end();
 
-  const content = data.choices[0].message?.content;
-  if (!content) {
-    throw new Error('OpenAI devolvió un mensaje sin contenido');
-  }
+    const timeout = setTimeout(() => {
+      proc.kill('SIGTERM');
+      reject(new Error(`CLI timeout después de ${PROMPT_TIMEOUT_MS / 1000}s`));
+    }, PROMPT_TIMEOUT_MS);
 
-  logger.debug(`Tokens usados: prompt=${data.usage?.prompt_tokens}, completion=${data.usage?.completion_tokens}`);
+    proc.on('close', (code) => {
+      clearTimeout(timeout);
+      if (code === 0 && output.trim().length > 0) {
+        resolve(output.trim());
+      } else if (code === 0 && output.trim().length === 0) {
+        reject(new Error(`CLI salió con código 0 pero sin output. stderr: ${errorOutput.slice(0, 500)}`));
+      } else {
+        reject(new Error(
+          `CLI salió con código ${code}. stderr: ${errorOutput.slice(0, 500) || '(vacío)'}`,
+        ));
+      }
+    });
 
-  return content;
+    proc.on('error', (err) => {
+      clearTimeout(timeout);
+      reject(new Error(`No se pudo ejecutar "${command}": ${err.message}`));
+    });
+  });
 }
 
 /**
- * Runs a multi-turn conversation with the AI model, sending all prompts
- * sequentially in a single session with shared context.
+ * Runs a multi-turn conversation using the CLI's native session continuity.
+ * Prompt 1 starts a new session; subsequent prompts use --continue.
  *
- * @param {string[]} prompts   Ordered array of prompt strings (4 prompts)
- * @param {Object}   logger    Winston logger instance
- * @returns {Promise<string>}  The raw output of the last prompt (Prompt 4 JSON)
+ * @param {string[]} prompts  Ordered array of prompt strings
+ * @param {Object}   logger   Winston logger instance
+ * @returns {Promise<string[]>}  All responses in order
  */
 export async function runSession(prompts, logger) {
   if (!prompts || prompts.length === 0) {
     throw new Error('No hay prompts para ejecutar');
   }
 
-  const conversationHistory = [];
   const responses = [];
 
   for (let i = 0; i < prompts.length; i++) {
     const promptNum = i + 1;
-    logger.info(`Ejecutando Prompt ${promptNum}/${prompts.length}...`);
+    const continueSession = i > 0;
 
-    const response = await callOpenAI(prompts[i], conversationHistory, logger);
+    logger.info(`Ejecutando Prompt ${promptNum}/${prompts.length}${continueSession ? ' (--continue)' : ' (nueva sesión)'}...`);
 
-    // Append this turn to the history so the next prompt has full context
-    conversationHistory.push({ role: 'user', content: prompts[i] });
-    conversationHistory.push({ role: 'assistant', content: response });
-
+    const response = await callCli(prompts[i], continueSession, logger);
     responses.push(response);
+
     logger.info(`Prompt ${promptNum}/${prompts.length} completado (${response.length} caracteres)`);
   }
 
-  // Return the last response — this is the validated JSON from Prompt 4
-  return responses[responses.length - 1];
+  return responses;
 }

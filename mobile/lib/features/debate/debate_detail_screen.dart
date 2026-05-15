@@ -5,6 +5,7 @@ import '../../core/api/api_client.dart';
 import '../../core/api/api_endpoints.dart';
 import '../../core/models/comment.dart';
 import '../../core/models/debate.dart';
+import '../../shared/theme/app_theme.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/error_view.dart';
 import '../../shared/widgets/loading_indicator.dart';
@@ -20,17 +21,15 @@ final _debateDetailProvider =
 final _commentsProvider =
     FutureProvider.family<List<Comment>, int>((ref, debateId) async {
   final dio = ref.read(apiClientProvider);
-  final resp =
-      await dio.get(ApiEndpoints.debateComments(debateId));
-  final List list = resp.data is List ? resp.data as List : ((resp.data as Map<String, dynamic>)['data'] as List? ?? []);
-  return list
-      .map((e) => Comment.fromJson(e as Map<String, dynamic>))
-      .toList();
+  final resp = await dio.get(ApiEndpoints.debateComments(debateId));
+  final List list = resp.data is List
+      ? resp.data as List
+      : ((resp.data as Map<String, dynamic>)['data'] as List? ?? []);
+  return list.map((e) => Comment.fromJson(e as Map<String, dynamic>)).toList();
 });
 
 class DebateDetailScreen extends ConsumerStatefulWidget {
   final int debateId;
-
   const DebateDetailScreen({super.key, required this.debateId});
 
   @override
@@ -38,8 +37,7 @@ class DebateDetailScreen extends ConsumerStatefulWidget {
       _DebateDetailScreenState();
 }
 
-class _DebateDetailScreenState
-    extends ConsumerState<DebateDetailScreen> {
+class _DebateDetailScreenState extends ConsumerState<DebateDetailScreen> {
   String? _selectedPosition;
   final _commentCtrl = TextEditingController();
   Comment? _replyingTo;
@@ -60,9 +58,8 @@ class _DebateDetailScreenState
       );
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
       }
     }
   }
@@ -72,52 +69,50 @@ class _DebateDetailScreenState
     if (text.isEmpty) return;
     try {
       final dio = ref.read(apiClientProvider);
-      await dio.post(
-        ApiEndpoints.debateComments(widget.debateId),
-        data: {
-          'content': text,
-          if (_replyingTo != null) 'parentId': _replyingTo!.id,
-        },
-      );
+      await dio.post(ApiEndpoints.debateComments(widget.debateId), data: {
+        'content': text,
+        if (_replyingTo != null) 'parentId': _replyingTo!.id,
+      });
       _commentCtrl.clear();
       setState(() => _replyingTo = null);
       ref.invalidate(_commentsProvider(widget.debateId));
     } catch (e) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.toString())),
-        );
+        ScaffoldMessenger.of(context)
+            .showSnackBar(SnackBar(content: Text(e.toString())));
       }
     }
   }
 
   Future<void> _vote(Comment comment, String direction) async {
-    final value = direction == 'upvote' ? 1 : -1;
     try {
       final dio = ref.read(apiClientProvider);
-      await dio.post(
-        ApiEndpoints.commentVote(comment.id),
-        data: {'value': value},
-      );
+      await dio.post(ApiEndpoints.commentVote(comment.id),
+          data: {'value': direction == 'up' ? 1 : -1});
       ref.invalidate(_commentsProvider(widget.debateId));
     } catch (_) {}
   }
 
   @override
   Widget build(BuildContext context) {
-    final debateAsync =
-        ref.watch(_debateDetailProvider(widget.debateId));
-    final commentsAsync =
-        ref.watch(_commentsProvider(widget.debateId));
+    final debateAsync = ref.watch(_debateDetailProvider(widget.debateId));
+    final commentsAsync = ref.watch(_commentsProvider(widget.debateId));
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Debate')),
+      appBar: AppBar(
+        leading: BackButton(color: TddColors.text2),
+        title: Text(
+          'Debate',
+          style: TddTypography.mono(size: 11, color: TddColors.text3),
+        ),
+        centerTitle: true,
+      ),
       body: debateAsync.when(
         loading: () => const LoadingIndicator(),
         error: (e, _) => ErrorView(
           message: e.toString(),
-          onRetry: () => ref
-              .invalidate(_debateDetailProvider(widget.debateId)),
+          onRetry: () =>
+              ref.invalidate(_debateDetailProvider(widget.debateId)),
         ),
         data: (debate) {
           final user = debate.createdBy;
@@ -125,151 +120,141 @@ class _DebateDetailScreenState
             children: [
               Expanded(
                 child: ListView(
-                  padding: const EdgeInsets.all(16),
+                  padding: EdgeInsets.zero,
                   children: [
-                    // Header
-                    Row(
-                      children: [
-                        Avatar(
-                          username: user.username,
-                          avatarUrl: user.avatarUrl,
-                          radius: 20,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment:
-                                CrossAxisAlignment.start,
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 0),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          // Author row
+                          Row(
                             children: [
-                              Row(
-                                children: [
-                                  Text(
-                                    user.username,
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .labelLarge
-                                        ?.copyWith(
-                                            fontWeight:
-                                                FontWeight.w600),
-                                  ),
-                                  if (user.personaSpecialty !=
-                                      null) ...[
-                                    const SizedBox(width: 6),
-                                    Chip(
-                                        label: Text(
-                                            user.personaSpecialty!)),
-                                  ],
-                                ],
+                              Avatar(
+                                username: user.username,
+                                avatarUrl: user.avatarUrl,
+                                size: 32,
+                                isAiPersona: user.isAiPersona,
                               ),
+                              const SizedBox(width: 8),
+                              Text(
+                                user.username,
+                                style: TddTypography.sans(
+                                    size: 13, weight: FontWeight.w500),
+                              ),
+                              if (user.personaSpecialty != null) ...[
+                                const SizedBox(width: 6),
+                                Chip(label: Text(user.personaSpecialty!)),
+                              ],
+                              const Spacer(),
                               if (debate.publishedAt != null)
                                 Text(
-                                  timeago.format(
-                                      debate.publishedAt!,
+                                  timeago.format(debate.publishedAt!,
                                       locale: 'es'),
-                                  style: Theme.of(context)
-                                      .textTheme
-                                      .bodySmall,
+                                  style: TddTypography.mono(
+                                      size: 10, color: TddColors.text4),
                                 ),
                             ],
                           ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 16),
-                    // Title
-                    Text(
-                      debate.title,
-                      style: Theme.of(context)
-                          .textTheme
-                          .headlineSmall
-                          ?.copyWith(fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 12),
-                    // Context
-                    if (debate.context.length > 200)
-                      ExpansionTile(
-                        title: const Text('Ver contexto'),
-                        children: [
-                          Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Text(debate.context,
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodyMedium),
+                          const SizedBox(height: 14),
+                          // Title
+                          Text(
+                            debate.title,
+                            style: TddTypography.serif(
+                              size: 24,
+                              weight: FontWeight.w500,
+                              letterSpacing: -0.018,
+                            ),
                           ),
+                          const SizedBox(height: 12),
+                          // Context
+                          if (debate.context.length > 300)
+                            _CollapsibleContext(text: debate.context)
+                          else
+                            Text(debate.context,
+                                style: TddTypography.sans(
+                                    size: 14, color: TddColors.text2,
+                                    height: 1.6)),
+                          // Source
+                          if (debate.sourceUrl != null) ...[
+                            const SizedBox(height: 8),
+                            GestureDetector(
+                              onTap: () {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  SnackBar(content: Text(debate.sourceUrl!)),
+                                );
+                              },
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  const Icon(Icons.open_in_new,
+                                      size: 12, color: TddColors.text3),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    debate.sourceName ?? 'Ver fuente',
+                                    style: TddTypography.mono(
+                                        size: 10, color: TddColors.text3),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ],
                         ],
-                      )
-                    else
-                      Text(debate.context,
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodyMedium),
-                    // Source link
-                    if (debate.sourceUrl != null) ...[
-                      const SizedBox(height: 8),
-                      TextButton.icon(
-                        icon: const Icon(Icons.open_in_new,
-                            size: 14),
-                        label: const Text('Ver fuente'),
-                        onPressed: () {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            SnackBar(content: Text(debate.sourceUrl!)),
-                          );
-                        },
                       ),
-                    ],
-                    const SizedBox(height: 20),
+                    ),
                     // Position selector
-                    Text(
-                      'Tu posición',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w600),
+                    const SizedBox(height: 20),
+                    Container(
+                      decoration: const BoxDecoration(
+                        border: Border.symmetric(
+                          horizontal:
+                              BorderSide(color: TddColors.border, width: 0.5),
+                        ),
+                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Row(
+                        children: [
+                          _positionBtn('support', 'A favor', TddColors.favor),
+                          _vDivider(),
+                          _positionBtn('neutral', 'Neutral', TddColors.neutral),
+                          _vDivider(),
+                          _positionBtn('oppose', 'En contra', TddColors.contra),
+                        ],
+                      ),
                     ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        _positionButton('support', 'A favor',
-                            Icons.thumb_up_outlined),
-                        const SizedBox(width: 8),
-                        _positionButton('oppose', 'En contra',
-                            Icons.thumb_down_outlined),
-                        const SizedBox(width: 8),
-                        _positionButton('neutral', 'Neutral',
-                            Icons.remove_circle_outline),
-                      ],
+                    // Comments
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
+                      child: Text(
+                        'Comentarios (${debate.commentCount ?? 0})',
+                        style: TddTypography.mono(
+                            size: 11, color: TddColors.text3),
+                      ),
                     ),
-                    const SizedBox(height: 24),
-                    // Comments header
-                    Text(
-                      'Comentarios (${debate.commentCount ?? 0})',
-                      style: Theme.of(context)
-                          .textTheme
-                          .titleMedium
-                          ?.copyWith(fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 8),
                     commentsAsync.when(
                       loading: () => const LoadingIndicator(),
                       error: (e, _) => ErrorView(
                         message: e.toString(),
-                        onRetry: () => ref.invalidate(
-                            _commentsProvider(widget.debateId)),
+                        onRetry: () => ref
+                            .invalidate(_commentsProvider(widget.debateId)),
                       ),
                       data: (comments) => comments.isEmpty
-                          ? const Padding(
-                              padding: EdgeInsets.all(16),
+                          ? Padding(
+                              padding: const EdgeInsets.all(32),
                               child: Center(
-                                  child: Text(
-                                      'Sé el primero en comentar')),
+                                child: Text(
+                                  'Sé el primero en comentar.',
+                                  style: TddTypography.sans(
+                                      size: 14, color: TddColors.text3),
+                                ),
+                              ),
                             )
                           : Column(
                               children: comments
                                   .map((c) => CommentTile(
                                         comment: c,
-                                        onReply: (c) => setState(
-                                            () => _replyingTo = c),
+                                        onReply: (c) =>
+                                            setState(() => _replyingTo = c),
                                         onVote: _vote,
                                       ))
                                   .toList(),
@@ -279,12 +264,10 @@ class _DebateDetailScreenState
                   ],
                 ),
               ),
-              // Comment input
               _CommentInput(
                 controller: _commentCtrl,
                 replyingTo: _replyingTo,
-                onCancelReply: () =>
-                    setState(() => _replyingTo = null),
+                onCancelReply: () => setState(() => _replyingTo = null),
                 onSend: _sendComment,
               ),
             ],
@@ -294,38 +277,80 @@ class _DebateDetailScreenState
     );
   }
 
-  Widget _positionButton(
-      String value, String label, IconData icon) {
+  Widget _positionBtn(String value, String label, Color color) {
     final selected = _selectedPosition == value;
     return Expanded(
-      child: OutlinedButton.icon(
-        icon: Icon(icon,
-            size: 16,
-            color: selected
-                ? const Color(0xFF4FC3F7)
-                : Colors.white54),
-        label: Text(label,
-            style: TextStyle(
-              fontSize: 12,
-              color: selected
-                  ? const Color(0xFF4FC3F7)
-                  : Colors.white54,
-            )),
-        style: OutlinedButton.styleFrom(
-          side: BorderSide(
-            color: selected
-                ? const Color(0xFF4FC3F7)
-                : Colors.white24,
-            width: selected ? 2 : 1,
-          ),
-          padding: const EdgeInsets.symmetric(
-              horizontal: 8, vertical: 10),
+      child: GestureDetector(
+        onTap: () => _setPosition(value),
+        child: Column(
+          children: [
+            Text(
+              selected ? '—' : '·',
+              style: TddTypography.mono(
+                size: 20,
+                color: selected ? color : TddColors.text4,
+              ),
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TddTypography.mono(
+                size: 10,
+                color: selected ? color : TddColors.text3,
+              ),
+            ),
+          ],
         ),
-        onPressed: () => _setPosition(value),
       ),
     );
   }
+
+  Widget _vDivider() => Container(
+        width: 0.5,
+        height: 40,
+        color: TddColors.border,
+      );
 }
+
+// ── Collapsible context ───────────────────────────────────────────────────────
+
+class _CollapsibleContext extends StatefulWidget {
+  final String text;
+  const _CollapsibleContext({required this.text});
+
+  @override
+  State<_CollapsibleContext> createState() => _CollapsibleContextState();
+}
+
+class _CollapsibleContextState extends State<_CollapsibleContext> {
+  bool _expanded = false;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          widget.text,
+          maxLines: _expanded ? null : 4,
+          overflow: _expanded ? null : TextOverflow.ellipsis,
+          style: TddTypography.sans(
+              size: 14, color: TddColors.text2, height: 1.6),
+        ),
+        const SizedBox(height: 4),
+        GestureDetector(
+          onTap: () => setState(() => _expanded = !_expanded),
+          child: Text(
+            _expanded ? 'Ver menos' : 'Ver más',
+            style: TddTypography.mono(size: 10, color: TddColors.text3),
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+// ── Composer ──────────────────────────────────────────────────────────────────
 
 class _CommentInput extends StatelessWidget {
   final TextEditingController controller;
@@ -343,8 +368,11 @@ class _CommentInput extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      color: const Color(0xFF1A1A2E),
-      padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
+      decoration: const BoxDecoration(
+        color: TddColors.bg,
+        border: Border(top: BorderSide(color: TddColors.border, width: 0.5)),
+      ),
+      padding: const EdgeInsets.fromLTRB(16, 8, 8, 8),
       child: SafeArea(
         top: false,
         child: Column(
@@ -353,19 +381,19 @@ class _CommentInput extends StatelessWidget {
           children: [
             if (replyingTo != null)
               Padding(
-                padding: const EdgeInsets.only(bottom: 4),
+                padding: const EdgeInsets.only(bottom: 6),
                 child: Row(
                   children: [
                     Text(
-                        'Respondiendo a ${replyingTo!.user.username}',
-                        style: const TextStyle(
-                            fontSize: 11,
-                            color: Color(0xFF4FC3F7))),
+                      'Respondiendo a ${replyingTo!.user.username}',
+                      style:
+                          TddTypography.mono(size: 10, color: TddColors.accent),
+                    ),
                     const Spacer(),
                     GestureDetector(
                       onTap: onCancelReply,
                       child: const Icon(Icons.close,
-                          size: 14, color: Colors.white38),
+                          size: 14, color: TddColors.text3),
                     ),
                   ],
                 ),
@@ -376,20 +404,23 @@ class _CommentInput extends StatelessWidget {
                   child: TextField(
                     controller: controller,
                     minLines: 1,
-                    maxLines: 3,
+                    maxLines: 4,
                     textInputAction: TextInputAction.send,
                     onSubmitted: (_) => onSend(),
-                    decoration: const InputDecoration(
-                      hintText: 'Escribe un comentario...',
-                      contentPadding: EdgeInsets.symmetric(
-                          horizontal: 16, vertical: 10),
+                    style: TddTypography.sans(size: 14),
+                    decoration: InputDecoration(
+                      hintText: 'Escribe un comentario…',
+                      hintStyle:
+                          TddTypography.sans(size: 14, color: TddColors.text4),
+                      border: InputBorder.none,
+                      enabledBorder: InputBorder.none,
+                      focusedBorder: InputBorder.none,
                     ),
                   ),
                 ),
-                const SizedBox(width: 8),
                 IconButton(
-                  icon: const Icon(Icons.send,
-                      color: Color(0xFF4FC3F7)),
+                  icon: const Icon(Icons.arrow_upward,
+                      size: 20, color: TddColors.accent),
                   onPressed: onSend,
                 ),
               ],

@@ -75,7 +75,7 @@ async function fetchWorkerConfig() {
   const baseUrl = process.env.BACKEND_API_BASE_URL;
   const apiKey = process.env.WORKER_API_KEY;
 
-  const response = await fetch(`${baseUrl}/api/v1/admin/worker/config`, {
+  const response = await fetch(`${baseUrl}/api/v1/worker/config`, {
     method: 'GET',
     headers: {
       'X-Worker-Key': apiKey,
@@ -109,6 +109,14 @@ async function tick() {
       return;
     }
 
+    // ACK antes de arrancar para que el trigger no se dispare de nuevo
+    if (config.trigger_pending) {
+      await fetch(`${process.env.BACKEND_API_BASE_URL}/api/v1/worker/ack`, {
+        method: 'POST',
+        headers: { 'X-Worker-Key': process.env.WORKER_API_KEY },
+      });
+    }
+
     logger.info('Iniciando ejecución del worker...');
     const { run } = await import('./runner.js');
     await run(config, logger);
@@ -131,7 +139,7 @@ function setupGracefulShutdown(intervalId) {
 
 logger.info('Worker tdd-app arrancando...');
 logger.info(`Backend: ${process.env.BACKEND_API_BASE_URL}`);
-logger.info(`Modelo IA: ${process.env.OPENCODE_MODEL_ID || 'gpt-4o'}`);
+logger.info(`CLI IA: ${process.env.AI_CLI_COMMAND || 'claude'} ${process.env.AI_CLI_ARGS || '-p --no-markdown'}`);
 
 // Ejecutar tick inmediatamente al arrancar
 await tick();

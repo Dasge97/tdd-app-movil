@@ -26,6 +26,7 @@ class WorkerService
             $run = new WorkerRun();
             $run->setId($runId);
             $run->setStatus('running');
+            $this->workerRunRepository->save($run);
         }
 
         $created = [];
@@ -65,30 +66,48 @@ class WorkerService
         if (empty($data['context'])) {
             throw new \InvalidArgumentException('context is required');
         }
-        if (empty($data['personaUsername'])) {
-            throw new \InvalidArgumentException('personaUsername is required');
+
+        // Accept persona_id (int) or personaUsername (string)
+        $personaId = $data['persona_id'] ?? null;
+        $personaUsername = $data['personaUsername'] ?? null;
+
+        if ($personaId !== null) {
+            $persona = $this->userRepository->find((int) $personaId);
+            if ($persona === null) {
+                throw new \InvalidArgumentException('persona not found with id: ' . $personaId);
+            }
+        } elseif ($personaUsername !== null) {
+            $persona = $this->userRepository->findByUsername($personaUsername);
+            if ($persona === null) {
+                throw new \InvalidArgumentException('persona not found: ' . $personaUsername);
+            }
+        } else {
+            throw new \InvalidArgumentException('persona_id or personaUsername is required');
         }
 
-        $persona = $this->userRepository->findByUsername($data['personaUsername']);
-        if ($persona === null) {
-            throw new \InvalidArgumentException('persona not found: ' . $data['personaUsername']);
-        }
+        // Accept both snake_case (from worker AI output) and camelCase
+        $cardSummary    = $data['card_summary']    ?? $data['cardSummary']    ?? null;
+        $sourceName     = $data['source_name']     ?? $data['sourceName']     ?? null;
+        $sourceUrl      = $data['source_url']      ?? $data['sourceUrl']      ?? null;
+        $publishedAt    = $data['published_at']    ?? $data['publishedAt']    ?? null;
+        $generationModel = $data['generation_model'] ?? $data['generationModel'] ?? null;
+        $dayDate        = $data['day_date']        ?? $data['dayDate']        ?? null;
 
         $debate = new Debate();
         $debate->setTitle($data['title']);
         $debate->setContext($data['context']);
         $debate->setQuestion($data['question'] ?? null);
-        $debate->setCardSummary($data['cardSummary'] ?? null);
-        $debate->setSourceName($data['sourceName'] ?? null);
-        $debate->setSourceUrl($data['sourceUrl'] ?? null);
-        $debate->setDayDate(isset($data['dayDate']) ? new \DateTime($data['dayDate']) : new \DateTime());
+        $debate->setCardSummary($cardSummary);
+        $debate->setSourceName($sourceName);
+        $debate->setSourceUrl($sourceUrl);
+        $debate->setDayDate($dayDate !== null ? new \DateTime($dayDate) : new \DateTime());
         $debate->setCreatedBy($persona);
         $debate->setAuthorType('ai');
         $debate->setWorkerRun($run);
-        $debate->setGenerationModel($data['generationModel'] ?? null);
+        $debate->setGenerationModel($generationModel);
 
-        if (!empty($data['publishedAt'])) {
-            $debate->setPublishedAt(new \DateTime($data['publishedAt']));
+        if (!empty($publishedAt)) {
+            $debate->setPublishedAt(new \DateTime($publishedAt));
         }
 
         $this->debateRepository->save($debate);

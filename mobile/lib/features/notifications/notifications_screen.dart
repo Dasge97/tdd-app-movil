@@ -4,6 +4,7 @@ import 'package:timeago/timeago.dart' as timeago;
 import '../../core/api/api_client.dart';
 import '../../core/api/api_endpoints.dart';
 import '../../core/models/notification.dart';
+import '../../shared/theme/app_theme.dart';
 import '../../shared/widgets/error_view.dart';
 import '../../shared/widgets/loading_indicator.dart';
 
@@ -11,10 +12,11 @@ final _notificationsProvider =
     FutureProvider<List<AppNotification>>((ref) async {
   final dio = ref.read(apiClientProvider);
   final resp = await dio.get(ApiEndpoints.notifications);
-  final List list = resp.data is List ? resp.data as List : ((resp.data as Map<String, dynamic>)['data'] as List? ?? []);
+  final List list = resp.data is List
+      ? resp.data as List
+      : ((resp.data as Map<String, dynamic>)['data'] as List? ?? []);
   return list
-      .map((e) =>
-          AppNotification.fromJson(e as Map<String, dynamic>))
+      .map((e) => AppNotification.fromJson(e as Map<String, dynamic>))
       .toList();
 });
 
@@ -30,7 +32,7 @@ class NotificationsScreen extends ConsumerWidget {
       case 'comment':
         return Icons.comment_outlined;
       case 'vote':
-        return Icons.thumb_up_outlined;
+        return Icons.arrow_upward;
       case 'mention':
         return Icons.alternate_email;
       default:
@@ -38,8 +40,7 @@ class NotificationsScreen extends ConsumerWidget {
     }
   }
 
-  Future<void> _markRead(
-      WidgetRef ref, int id) async {
+  Future<void> _markRead(WidgetRef ref, int id) async {
     try {
       final dio = ref.read(apiClientProvider);
       await dio.put(ApiEndpoints.notificationRead(id));
@@ -61,12 +62,21 @@ class NotificationsScreen extends ConsumerWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Notificaciones'),
+        leading: BackButton(color: TddColors.text2),
+        title: Text(
+          'Notificaciones',
+          style: TddTypography.serif(size: 17, weight: FontWeight.w500),
+        ),
         actions: [
-          TextButton(
-            onPressed: () => _markAllRead(ref),
-            child: const Text('Marcar todo leído',
-                style: TextStyle(color: Color(0xFF4FC3F7))),
+          GestureDetector(
+            onTap: () => _markAllRead(ref),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Text(
+                'Todo leído',
+                style: TddTypography.mono(size: 10, color: TddColors.text3),
+              ),
+            ),
           ),
         ],
       ),
@@ -77,43 +87,93 @@ class NotificationsScreen extends ConsumerWidget {
           onRetry: () => ref.invalidate(_notificationsProvider),
         ),
         data: (notifications) => notifications.isEmpty
-            ? const Center(child: Text('Sin notificaciones'))
-            : ListView.separated(
+            ? Center(
+                child: Text(
+                  'Sin notificaciones.',
+                  style: TddTypography.sans(size: 14, color: TddColors.text3),
+                ),
+              )
+            : ListView.builder(
+                padding: EdgeInsets.zero,
                 itemCount: notifications.length,
-                separatorBuilder: (_, __) =>
-                    const Divider(height: 1),
                 itemBuilder: (_, i) {
                   final n = notifications[i];
-                  return ListTile(
-                    tileColor: n.isRead
-                        ? null
-                        : const Color(0xFF1E2D50).withOpacity(0.5),
-                    leading: Icon(
-                      _iconForType(n.type),
-                      color: n.isRead
-                          ? Colors.white38
-                          : const Color(0xFF4FC3F7),
-                    ),
-                    title: Text(n.title,
-                        style: TextStyle(
-                            fontWeight: n.isRead
-                                ? FontWeight.normal
-                                : FontWeight.w600)),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(n.body),
-                        const SizedBox(height: 2),
-                        Text(
-                          timeago.format(n.createdAt,
-                              locale: 'es'),
-                          style:
-                              Theme.of(context).textTheme.bodySmall,
+                  return GestureDetector(
+                    onTap: () => n.isRead ? null : _markRead(ref, n.id),
+                    child: Container(
+                      color: n.isRead ? null : TddColors.unread,
+                      decoration: const BoxDecoration(
+                        border: Border(
+                          bottom: BorderSide(
+                              color: TddColors.border, width: 0.5),
                         ),
-                      ],
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 20, vertical: 14),
+                      child: Row(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Container(
+                            width: 36,
+                            height: 36,
+                            decoration: BoxDecoration(
+                              color: n.isRead
+                                  ? TddColors.surface2
+                                  : TddColors.accentSoft,
+                              shape: BoxShape.circle,
+                            ),
+                            child: Icon(
+                              _iconForType(n.type),
+                              size: 18,
+                              color: n.isRead
+                                  ? TddColors.text3
+                                  : TddColors.accent,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  n.title,
+                                  style: TddTypography.sans(
+                                    size: 14,
+                                    weight: n.isRead
+                                        ? FontWeight.w400
+                                        : FontWeight.w500,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  n.body,
+                                  style: TddTypography.sans(
+                                      size: 13, color: TddColors.text3),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                const SizedBox(height: 4),
+                                Text(
+                                  timeago.format(n.createdAt, locale: 'es'),
+                                  style: TddTypography.mono(
+                                      size: 10, color: TddColors.text4),
+                                ),
+                              ],
+                            ),
+                          ),
+                          if (!n.isRead)
+                            Container(
+                              width: 7,
+                              height: 7,
+                              margin: const EdgeInsets.only(top: 5),
+                              decoration: const BoxDecoration(
+                                color: TddColors.accent,
+                                shape: BoxShape.circle,
+                              ),
+                            ),
+                        ],
+                      ),
                     ),
-                    onTap: () =>
-                        n.isRead ? null : _markRead(ref, n.id),
                   );
                 },
               ),

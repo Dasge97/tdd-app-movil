@@ -17,6 +17,11 @@ class JwtAuthSubscriber implements EventSubscriberInterface
         '/api/v1/auth/login',
         '/api/v1/auth/refresh',
         '/api/v1/worker/publish',
+        '/api/v1/worker/config',
+        '/api/v1/worker/trigger',
+        '/api/v1/worker/ack',
+        '/api/v1/worker/personas',
+        '/api/v1/worker/recent-topics',
     ];
 
     public function __construct(

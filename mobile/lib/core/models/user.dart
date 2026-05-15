@@ -29,6 +29,28 @@ class User {
     this.isShadowBanned = false,
   });
 
+  User copyWith({
+    String? bio,
+    String? avatarUrl,
+    String? location,
+    String? profileTagline,
+  }) =>
+      User(
+        id: id,
+        username: username,
+        bio: bio ?? this.bio,
+        avatarUrl: avatarUrl ?? this.avatarUrl,
+        location: location ?? this.location,
+        profileTagline: profileTagline ?? this.profileTagline,
+        personaSpecialty: personaSpecialty,
+        profileTraits: profileTraits,
+        reliabilityScore: reliabilityScore,
+        role: role,
+        status: status,
+        isAiPersona: isAiPersona,
+        isShadowBanned: isShadowBanned,
+      );
+
   factory User.fromJson(Map<String, dynamic> j) => User(
         id: j['id'] as int,
         username: j['username'] as String,

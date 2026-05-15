@@ -171,3 +171,71 @@ export function validate(jsonOutput) {
 
   return debates;
 }
+
+/**
+ * Validates a single debate object from a raw string.
+ * Used when each prompt generates one debate individually.
+ *
+ * @param {string} jsonOutput  Raw string output from the model
+ * @returns {Object}           Validated debate object
+ */
+export function validateOne(jsonOutput) {
+  const parsed = extractJson(jsonOutput);
+
+  // Accept bare object or { debates: [single] } or [single]
+  let debate;
+  if (Array.isArray(parsed)) {
+    if (parsed.length !== 1) {
+      throw new Error(`Se esperaba 1 debate, se encontraron ${parsed.length}`);
+    }
+    debate = parsed[0];
+  } else if (parsed && Array.isArray(parsed.debates)) {
+    if (parsed.debates.length !== 1) {
+      throw new Error(`Se esperaba 1 debate, se encontraron ${parsed.debates.length}`);
+    }
+    debate = parsed.debates[0];
+  } else if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+    debate = parsed;
+  } else {
+    throw new Error('No se encontró un objeto de debate válido en el output');
+  }
+
+  for (const field of REQUIRED_FIELDS) {
+    if (debate[field] === undefined || debate[field] === null || debate[field] === '') {
+      throw new Error(`Falta el campo requerido "${field}"`);
+    }
+  }
+
+  if (typeof debate.persona_id !== 'number' || !Number.isInteger(debate.persona_id)) {
+    throw new Error(`persona_id debe ser un entero, se recibió: ${JSON.stringify(debate.persona_id)}`);
+  }
+
+  const titleLen = debate.title.length;
+  if (titleLen < 60 || titleLen > 120) {
+    throw new Error(`title tiene ${titleLen} caracteres (debe estar entre 60 y 120)`);
+  }
+  if (!debate.title.trim().endsWith('?')) {
+    throw new Error('title debe terminar en "?"');
+  }
+
+  const questionLen = debate.question.length;
+  if (questionLen < 80 || questionLen > 160) {
+    throw new Error(`question tiene ${questionLen} caracteres (debe estar entre 80 y 160)`);
+  }
+
+  const summaryLen = debate.card_summary.length;
+  if (summaryLen < 100 || summaryLen > 220) {
+    throw new Error(`card_summary tiene ${summaryLen} caracteres (debe estar entre 100 y 220)`);
+  }
+
+  const contextWords = wordCount(debate.context);
+  if (contextWords < 180 || contextWords > 300) {
+    throw new Error(`context tiene ${contextWords} palabras (debe estar entre 180 y 300)`);
+  }
+
+  if (!debate.source_url.startsWith('http')) {
+    throw new Error(`source_url no parece una URL válida: "${debate.source_url}"`);
+  }
+
+  return debate;
+}

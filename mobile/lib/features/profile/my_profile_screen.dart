@@ -5,19 +5,19 @@ import '../../core/api/api_client.dart';
 import '../../core/api/api_endpoints.dart';
 import '../../core/auth/auth_provider.dart';
 import '../../core/models/debate.dart';
+import '../../shared/theme/app_theme.dart';
 import '../../shared/widgets/avatar.dart';
 import '../../shared/widgets/error_view.dart';
 import '../../shared/widgets/loading_indicator.dart';
 import '../home/debate_card.dart';
 
-final _favoritesProvider =
-    FutureProvider<List<Debate>>((ref) async {
+final _favoritesProvider = FutureProvider<List<Debate>>((ref) async {
   final dio = ref.read(apiClientProvider);
   final resp = await dio.get(ApiEndpoints.myFavorites);
-  final List list = resp.data is List ? resp.data as List : ((resp.data as Map<String, dynamic>)['data'] as List? ?? []);
-  return list
-      .map((e) => Debate.fromJson(e as Map<String, dynamic>))
-      .toList();
+  final List list = resp.data is List
+      ? resp.data as List
+      : ((resp.data as Map<String, dynamic>)['data'] as List? ?? []);
+  return list.map((e) => Debate.fromJson(e as Map<String, dynamic>)).toList();
 });
 
 class MyProfileScreen extends ConsumerWidget {
@@ -29,117 +29,124 @@ class MyProfileScreen extends ConsumerWidget {
     final favAsync = ref.watch(_favoritesProvider);
 
     if (user == null) {
-      return const Scaffold(
-        body: Center(child: Text('No autenticado')),
-      );
+      return const Scaffold(body: Center(child: Text('No autenticado')));
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Mi perfil'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () => context.push('/home/profile/edit'),
-            tooltip: 'Editar perfil',
-          ),
-        ],
-      ),
       body: ListView(
+        padding: EdgeInsets.zero,
         children: [
-          const SizedBox(height: 24),
-          Center(
-            child: Avatar(
-              username: user.username,
-              avatarUrl: user.avatarUrl,
-              radius: 48,
-            ),
-          ),
-          const SizedBox(height: 16),
-          Center(
-            child: Text(
-              '@${user.username}',
-              style: Theme.of(context)
-                  .textTheme
-                  .titleLarge
-                  ?.copyWith(fontWeight: FontWeight.w700),
-            ),
-          ),
-          if (user.profileTagline != null) ...[
-            const SizedBox(height: 4),
-            Center(
-              child: Text(
-                user.profileTagline!,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(color: Colors.white54),
-              ),
-            ),
-          ],
-          const SizedBox(height: 16),
-          Padding(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 24),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
+          // Hero section
+          Container(
+            color: TddColors.bgElev,
+            padding: const EdgeInsets.fromLTRB(24, 28, 24, 24),
+            child: Column(
               children: [
-                const Icon(Icons.star_outline,
-                    color: Color(0xFF4FC3F7), size: 18),
-                const SizedBox(width: 6),
+                Avatar(
+                  username: user.username,
+                  avatarUrl: user.avatarUrl,
+                  size: 80,
+                ),
+                const SizedBox(height: 14),
                 Text(
-                  'Fiabilidad: ${user.reliabilityScore}',
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  user.username,
+                  style: TddTypography.serif(size: 22, weight: FontWeight.w500),
+                ),
+                if (user.profileTagline != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    user.profileTagline!,
+                    textAlign: TextAlign.center,
+                    style: TddTypography.sans(
+                        size: 13, color: TddColors.text3,
+                        style: FontStyle.italic),
+                  ),
+                ],
+                if (user.location != null) ...[
+                  const SizedBox(height: 10),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 10, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: TddColors.surface,
+                      borderRadius: BorderRadius.circular(20),
+                      border:
+                          Border.all(color: TddColors.border, width: 0.5),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.location_on_outlined,
+                            size: 12, color: TddColors.text3),
+                        const SizedBox(width: 4),
+                        Text(
+                          user.location!,
+                          style: TddTypography.mono(
+                              size: 10, color: TddColors.text3),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+                if (user.bio != null && user.bio!.isNotEmpty) ...[
+                  const SizedBox(height: 14),
+                  Text(
+                    user.bio!,
+                    textAlign: TextAlign.center,
+                    style: TddTypography.sans(
+                        size: 14, color: TddColors.text2, height: 1.5),
+                  ),
+                ],
+                const SizedBox(height: 16),
+                OutlinedButton(
+                  onPressed: () => context.push('/home/profile/edit'),
+                  style: OutlinedButton.styleFrom(
+                    minimumSize: const Size(double.infinity, 38),
+                  ),
+                  child: const Text('Editar perfil'),
                 ),
               ],
             ),
           ),
-          if (user.location != null) ...[
-            const SizedBox(height: 8),
-            Center(
+          // Stats row
+          Container(
+            decoration: const BoxDecoration(
+              border: Border.symmetric(
+                  horizontal:
+                      BorderSide(color: TddColors.border, width: 0.5)),
+            ),
+            child: IntrinsicHeight(
               child: Row(
-                mainAxisSize: MainAxisSize.min,
                 children: [
-                  const Icon(Icons.location_on_outlined,
-                      size: 14, color: Colors.white38),
-                  const SizedBox(width: 4),
-                  Text(user.location!,
-                      style:
-                          Theme.of(context).textTheme.bodySmall),
+                  _statCell(
+                    label: 'FIABILIDAD',
+                    value: '${user.reliabilityScore}',
+                  ),
+                  const VerticalDivider(
+                      width: 0.5, color: TddColors.border),
+                  _statCell(
+                    label: 'ROL',
+                    value: user.role.toUpperCase(),
+                  ),
+                  const VerticalDivider(
+                      width: 0.5, color: TddColors.border),
+                  _statCell(
+                    label: 'ESTADO',
+                    value: user.status == 'active' ? 'Activo' : user.status,
+                  ),
                 ],
               ),
             ),
-          ],
-          if (user.bio != null && user.bio!.isNotEmpty) ...[
-            const SizedBox(height: 16),
-            Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 24),
-              child: Text(
-                user.bio!,
-                textAlign: TextAlign.center,
-                style: Theme.of(context).textTheme.bodyMedium,
-              ),
-            ),
-          ],
-          const SizedBox(height: 16),
-          Center(
-            child: ElevatedButton.icon(
-              icon: const Icon(Icons.edit_outlined),
-              label: const Text('Editar perfil'),
-              onPressed: () =>
-                  context.push('/home/profile/edit'),
-            ),
           ),
-          const SizedBox(height: 24),
+          // Favorites section
           Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16),
+            padding: const EdgeInsets.fromLTRB(20, 20, 20, 4),
             child: Text(
-              'Favoritos',
-              style: Theme.of(context).textTheme.titleMedium,
+              'FAVORITOS',
+              style: TddTypography.mono(size: 10, color: TddColors.text3),
             ),
           ),
-          const SizedBox(height: 8),
+          const Divider(),
           favAsync.when(
             loading: () => const LoadingIndicator(),
             error: (e, _) => ErrorView(
@@ -147,19 +154,40 @@ class MyProfileScreen extends ConsumerWidget {
               onRetry: () => ref.invalidate(_favoritesProvider),
             ),
             data: (debates) => debates.isEmpty
-                ? const Padding(
-                    padding: EdgeInsets.all(16),
+                ? Padding(
+                    padding: const EdgeInsets.all(32),
                     child: Center(
-                        child: Text('Sin debates favoritos')),
+                      child: Text(
+                        'Sin debates favoritos.',
+                        style: TddTypography.sans(
+                            size: 14, color: TddColors.text3),
+                      ),
+                    ),
                   )
                 : Column(
-                    children: debates
-                        .map((d) => DebateCard(debate: d))
-                        .toList(),
+                    children:
+                        debates.map((d) => DebateCard(debate: d)).toList(),
                   ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 32),
         ],
+      ),
+    );
+  }
+
+  Widget _statCell({required String label, required String value}) {
+    return Expanded(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(vertical: 14),
+        child: Column(
+          children: [
+            Text(value,
+                style: TddTypography.serif(size: 20, weight: FontWeight.w500)),
+            const SizedBox(height: 3),
+            Text(label,
+                style: TddTypography.mono(size: 9, color: TddColors.text3)),
+          ],
+        ),
       ),
     );
   }

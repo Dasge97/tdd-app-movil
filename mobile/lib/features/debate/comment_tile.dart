@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:timeago/timeago.dart' as timeago;
 import '../../core/models/comment.dart';
 import '../../shared/widgets/avatar.dart';
+import '../../shared/theme/app_theme.dart';
 
 class CommentTile extends StatelessWidget {
   final Comment comment;
@@ -19,101 +20,130 @@ class CommentTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tile = _buildTile(context);
+
+    if (isReply) {
+      return Stack(
+        children: [
+          Positioned(
+            left: 16 + 15 - 0.5, // horizontal padding + half avatar width
+            top: 0,
+            bottom: 0,
+            width: 1,
+            child: ColoredBox(color: TddColors.border),
+          ),
+          Padding(
+            padding: const EdgeInsets.only(left: 32),
+            child: tile,
+          ),
+        ],
+      );
+    }
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        tile,
+        if (comment.replies.isNotEmpty)
+          ...comment.replies.map(
+            (r) => CommentTile(comment: r, onVote: onVote, isReply: true),
+          ),
+        const Divider(),
+      ],
+    );
+  }
+
+  Widget _buildTile(BuildContext context) {
     return Padding(
-      padding: EdgeInsets.only(left: isReply ? 32 : 0),
-      child: Column(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Padding(
-            padding: const EdgeInsets.symmetric(
-                horizontal: 16, vertical: 8),
+          Avatar(
+            username: comment.user.username,
+            avatarUrl: comment.user.avatarUrl,
+            size: 30,
+            isAiPersona: comment.user.isAiPersona,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    Avatar(
-                      username: comment.user.username,
-                      avatarUrl: comment.user.avatarUrl,
-                      radius: 14,
-                    ),
-                    const SizedBox(width: 8),
                     Text(
                       comment.user.username,
-                      style: Theme.of(context)
-                          .textTheme
-                          .labelLarge
-                          ?.copyWith(
-                              fontWeight: FontWeight.w600),
+                      style: TddTypography.sans(
+                        size: 13,
+                        weight: FontWeight.w500,
+                      ),
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(width: 6),
                     Text(
-                      timeago.format(comment.createdAt,
-                          locale: 'es'),
-                      style:
-                          Theme.of(context).textTheme.bodySmall,
+                      '· ${timeago.format(comment.createdAt, locale: 'es')}',
+                      style: TddTypography.mono(
+                        size: 10.5,
+                        color: TddColors.text3,
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 6),
+                const SizedBox(height: 4),
                 Text(
                   comment.content,
-                  style: Theme.of(context).textTheme.bodyMedium,
+                  style: TddTypography.sans(size: 14),
                 ),
-                const SizedBox(height: 4),
+                const SizedBox(height: 6),
                 Row(
                   children: [
-                    IconButton(
-                      iconSize: 18,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      icon: const Icon(Icons.thumb_up_outlined),
-                      onPressed: () =>
-                          onVote?.call(comment, 'up'),
+                    GestureDetector(
+                      onTap: () => onVote?.call(comment, 'up'),
+                      child: Text(
+                        '▲',
+                        style: TddTypography.mono(
+                          size: 11,
+                          color: TddColors.text3,
+                        ),
+                      ),
                     ),
-                    const SizedBox(width: 4),
+                    const SizedBox(width: 6),
                     Text(
                       '${comment.score}',
-                      style: Theme.of(context).textTheme.bodySmall,
-                    ),
-                    const SizedBox(width: 4),
-                    IconButton(
-                      iconSize: 18,
-                      padding: EdgeInsets.zero,
-                      constraints: const BoxConstraints(),
-                      icon:
-                          const Icon(Icons.thumb_down_outlined),
-                      onPressed: () =>
-                          onVote?.call(comment, 'down'),
-                    ),
-                    const SizedBox(width: 12),
-                    if (!isReply)
-                      TextButton(
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: Size.zero,
-                          tapTargetSize:
-                              MaterialTapTargetSize.shrinkWrap,
-                        ),
-                        onPressed: () => onReply?.call(comment),
-                        child: const Text('Responder',
-                            style: TextStyle(
-                                color: Color(0xFF4FC3F7),
-                                fontSize: 12)),
+                      style: TddTypography.mono(
+                        size: 12,
+                        color: TddColors.text2,
                       ),
+                    ),
+                    const SizedBox(width: 6),
+                    GestureDetector(
+                      onTap: () => onVote?.call(comment, 'down'),
+                      child: Text(
+                        '▼',
+                        style: TddTypography.mono(
+                          size: 11,
+                          color: TddColors.text3,
+                        ),
+                      ),
+                    ),
+                    if (!isReply) ...[
+                      const SizedBox(width: 14),
+                      GestureDetector(
+                        onTap: () => onReply?.call(comment),
+                        child: Text(
+                          'Responder',
+                          style: TddTypography.mono(
+                            size: 10.5,
+                            color: TddColors.text3,
+                          ),
+                        ),
+                      ),
+                    ],
                   ],
                 ),
               ],
             ),
           ),
-          if (comment.replies.isNotEmpty)
-            ...comment.replies.map(
-              (r) => CommentTile(
-                comment: r,
-                onVote: onVote,
-                isReply: true,
-              ),
-            ),
         ],
       ),
     );

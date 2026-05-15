@@ -16,11 +16,12 @@ import '../../features/chat/conversations_screen.dart';
 import '../../features/chat/chat_screen.dart';
 import '../../features/profile/my_profile_screen.dart';
 import '../../features/profile/edit_profile_screen.dart';
+import '../../features/settings/settings_screen.dart';
 
 final _authRoutes = {'/login', '/register'};
 
 final routerProvider = Provider<GoRouter>((ref) {
-  final notifier = ref.watch(authProvider.notifier);
+  ref.watch(authProvider.notifier);
 
   return GoRouter(
     initialLocation: '/login',
@@ -109,6 +110,10 @@ final routerProvider = Provider<GoRouter>((ref) {
               GoRoute(
                 path: 'edit',
                 builder: (_, __) => const EditProfileScreen(),
+              ),
+              GoRoute(
+                path: 'settings',
+                builder: (_, __) => const SettingsScreen(),
               ),
             ],
           ),

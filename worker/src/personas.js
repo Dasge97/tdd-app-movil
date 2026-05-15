@@ -1,8 +1,8 @@
-import { query } from './db.js';
+import fetch from 'node-fetch';
 
 /**
  * Static persona definitions — sourced from docs/personajes/*.md
- * IDs are resolved at runtime from the database.
+ * IDs are resolved at runtime from the backend API.
  */
 export const PERSONAS = [
   {
@@ -63,29 +63,32 @@ export const PERSONAS = [
   },
 ];
 
+async function apiFetch(path) {
+  const baseUrl = process.env.BACKEND_API_BASE_URL;
+  const apiKey = process.env.WORKER_API_KEY;
+
+  const response = await fetch(`${baseUrl}${path}`, {
+    headers: { 'X-Worker-Key': apiKey, 'Accept': 'application/json' },
+  });
+
+  if (!response.ok) {
+    const body = await response.text();
+    throw new Error(`Worker API error ${response.status} ${path}: ${body}`);
+  }
+
+  return response.json();
+}
+
 /**
- * Fetches all AI persona users from the database and calculates how many
- * days have passed since each persona last created a debate.
+ * Fetches all AI persona users from the backend and calculates days since
+ * each persona last created a debate.
  *
- * Returns an array of objects:
+ * Returns an array sorted from most urgent (highest daysSince / never) to least:
  * { id, username, specialty, daysSince (null = never published) }
- * Sorted from most urgent (highest daysSince / never) to least.
  */
 export async function getPersonaRotation() {
-  const rows = await query(`
-    SELECT
-      u.id,
-      u.username,
-      u.persona_specialty AS specialty,
-      CAST(DATEDIFF(NOW(), MAX(d.day_date)) AS SIGNED) AS days_since
-    FROM users u
-    LEFT JOIN debates d ON d.created_by = u.id
-    WHERE u.is_ai_persona = 1
-    GROUP BY u.id, u.username, u.persona_specialty
-    ORDER BY days_since DESC
-  `);
+  const rows = await apiFetch('/api/v1/worker/personas');
 
-  // Rows with NULL days_since (never published) should be most urgent
   return rows.map((row) => ({
     id: row.id,
     username: row.username,
@@ -101,11 +104,6 @@ export async function getPersonaRotation() {
 
 /**
  * Selects which personas should publish today.
- *
- * @param {Array}  personasWithDays   Output of getPersonaRotation()
- * @param {number} rotationLimit      Days threshold that makes a persona "mandatory"
- * @param {number} targetCount        Total personas to select
- * @returns {{ mandatory: Array, available: Array }}
  */
 export function calculateSlots(personasWithDays, rotationLimit, targetCount) {
   const mandatory = personasWithDays.filter(
@@ -116,14 +114,12 @@ export function calculateSlots(personasWithDays, rotationLimit, targetCount) {
   );
 
   if (mandatory.length >= targetCount) {
-    // Too many mandatory — keep only the most urgent targetCount
     return {
       mandatory: mandatory.slice(0, targetCount),
       available: [],
     };
   }
 
-  // Fill remaining slots from available using a random sample
   const needed = targetCount - mandatory.length;
   const shuffled = available.sort(() => Math.random() - 0.5);
   const picked = shuffled.slice(0, needed);
@@ -135,8 +131,7 @@ export function calculateSlots(personasWithDays, rotationLimit, targetCount) {
 }
 
 /**
- * Enriches a persona entry from the DB with its static definition data.
- * Falls back gracefully if the username is not in the static list.
+ * Enriches a persona entry from the API with its static definition data.
  */
 export function enrichPersona(dbPersona) {
   const staticDef = PERSONAS.find((p) => p.username === dbPersona.username);

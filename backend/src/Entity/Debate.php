@@ -49,7 +49,7 @@ class Debate
     #[ORM\Column(type: 'string', length: 20, options: ['default' => 'ai'])]
     private string $authorType = 'ai';
 
-    #[ORM\ManyToOne(targetEntity: WorkerRun::class)]
+    #[ORM\ManyToOne(targetEntity: WorkerRun::class, cascade: ['persist'])]
     #[ORM\JoinColumn(nullable: true)]
     private ?WorkerRun $workerRun = null;
 

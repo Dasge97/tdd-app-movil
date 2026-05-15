@@ -71,6 +71,14 @@ class AdminService
         $this->workerConfigRepository->save($config);
     }
 
+    public function resetTriggerPending(): void
+    {
+        $config = $this->workerConfigRepository->getConfig();
+        $config->setTriggerPending(false);
+        $config->setUpdatedAt(new \DateTime());
+        $this->workerConfigRepository->save($config);
+    }
+
     public function getWorkerRuns(int $limit = 20): array
     {
         return $this->workerRunRepository->findRecent($limit);

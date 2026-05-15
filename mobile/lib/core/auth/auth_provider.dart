@@ -106,6 +106,11 @@ class AuthNotifier extends StateNotifier<AuthState> {
     }
   }
 
+  void refreshUser(Map<String, dynamic> json) {
+    final updated = User.fromJson(json);
+    state = state.copyWith(user: updated);
+  }
+
   Future<void> logout() async {
     try {
       final dio = _ref.read(apiClientProvider);
