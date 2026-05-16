@@ -25,6 +25,25 @@ class UserController extends AbstractController
     ) {
     }
 
+    /** Top usuarios reales por reliabilityScore — para el tab Protagonistas. */
+    #[Route('/protagonistas', name: 'api_users_protagonistas', methods: ['GET'])]
+    public function protagonistas(Request $request): JsonResponse
+    {
+        $limit = min(50, max(1, (int) $request->query->get('limit', '20')));
+        $users = $this->userRepository->findProtagonistaRanking($limit);
+
+        $data = array_map(fn(User $u) => [
+            'id'               => $u->getId(),
+            'username'         => $u->getUsername(),
+            'avatarUrl'        => $u->getAvatarUrl(),
+            'bio'              => $u->getBio(),
+            'profileTagline'   => $u->getProfileTagline(),
+            'reliabilityScore' => $u->getReliabilityScore(),
+        ], $users);
+
+        return new JsonResponse($data);
+    }
+
     #[Route('/me', name: 'api_users_me', methods: ['GET'])]
     public function me(Request $request): JsonResponse
     {

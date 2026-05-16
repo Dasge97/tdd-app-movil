@@ -117,6 +117,67 @@ class DebateRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /** Debates para el ticker: todos, ordenados por nº de comentarios. */
+    public function findForTicker(int $limit = 20): array
+    {
+        return $this->createQueryBuilder('d')
+            ->leftJoin('d.comments', 'c')
+            ->groupBy('d.id')
+            ->orderBy('COUNT(c.id)', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** Top debates de hoy por nº de comentarios. */
+    public function findTopToday(int $limit = 10): array
+    {
+        $today = (new \DateTime())->setTime(0, 0, 0);
+
+        return $this->createQueryBuilder('d')
+            ->leftJoin('d.comments', 'c')
+            ->where('d.dayDate = :today')
+            ->setParameter('today', $today->format('Y-m-d'))
+            ->groupBy('d.id')
+            ->orderBy('COUNT(c.id)', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** Top debates de los últimos 7 días por nº de comentarios. */
+    public function findTopWeek(int $limit = 10): array
+    {
+        $since = (new \DateTime())->modify('-7 days')->setTime(0, 0, 0);
+
+        return $this->createQueryBuilder('d')
+            ->leftJoin('d.comments', 'c')
+            ->where('d.dayDate >= :since')
+            ->setParameter('since', $since->format('Y-m-d'))
+            ->groupBy('d.id')
+            ->orderBy('COUNT(c.id)', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
+    /** Debates recientes, con filtro opcional por persona (username). */
+    public function findRecent(int $limit = 20, int $offset = 0, ?string $personaUsername = null): array
+    {
+        $qb = $this->createQueryBuilder('d')
+            ->leftJoin('d.createdBy', 'u')
+            ->orderBy('d.createdAt', 'DESC')
+            ->setMaxResults($limit)
+            ->setFirstResult($offset);
+
+        if ($personaUsername !== null) {
+            $qb->where('u.username = :persona')
+               ->setParameter('persona', $personaUsername);
+        }
+
+        return $qb->getQuery()->getResult();
+    }
+
     public function save(Debate $debate, bool $flush = true): void
     {
         $this->getEntityManager()->persist($debate);

@@ -7,6 +7,7 @@ namespace App\Controller\Api;
 use App\Entity\Debate;
 use App\Entity\User;
 use App\Repository\CommentRepository;
+use App\Repository\DebateRepository;
 use App\Service\DebateService;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -18,8 +19,46 @@ class DebateController extends AbstractController
 {
     public function __construct(
         private readonly DebateService $debateService,
-        private readonly CommentRepository $commentRepository
+        private readonly CommentRepository $commentRepository,
+        private readonly DebateRepository $debateRepository,
     ) {
+    }
+
+    /** Debates para el ticker: top 20 por participación, con commentCount. */
+    #[Route('/ticker', name: 'api_debates_ticker', methods: ['GET'])]
+    public function ticker(): JsonResponse
+    {
+        $debates = $this->debateRepository->findForTicker(20);
+        return new JsonResponse($this->normalizeDebates($debates));
+    }
+
+    /** Top debates de HOY por participación. */
+    #[Route('/top-today', name: 'api_debates_top_today', methods: ['GET'])]
+    public function topToday(): JsonResponse
+    {
+        $debates = $this->debateRepository->findTopToday(10);
+        return new JsonResponse($this->normalizeDebates($debates));
+    }
+
+    /** Top debates de la SEMANA (últimos 7 días) por participación. */
+    #[Route('/top-week', name: 'api_debates_top_week', methods: ['GET'])]
+    public function topWeek(): JsonResponse
+    {
+        $debates = $this->debateRepository->findTopWeek(10);
+        return new JsonResponse($this->normalizeDebates($debates));
+    }
+
+    /** Debates recientes con filtro opcional ?persona=username y paginación ?page=N. */
+    #[Route('/recent', name: 'api_debates_recent', methods: ['GET'])]
+    public function recent(Request $request): JsonResponse
+    {
+        $page    = max(1, (int) $request->query->get('page', '1'));
+        $persona = $request->query->get('persona');
+        $limit   = 20;
+        $offset  = ($page - 1) * $limit;
+
+        $debates = $this->debateRepository->findRecent($limit, $offset, $persona ?: null);
+        return new JsonResponse($this->normalizeDebates($debates));
     }
 
     #[Route('/today', name: 'api_debates_today', methods: ['GET'])]

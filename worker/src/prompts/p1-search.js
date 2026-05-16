@@ -23,7 +23,7 @@ export function buildSearchPrompt(recentTopics) {
 TEMAS YA PUBLICADOS en los últimos 14 días (evita repetirlos o temas demasiado similares):
 ${recentList}
 
-Tu tarea: Busca y lista entre 10 y 12 noticias relevantes de HOY en España y el mundo. Elige noticias de temáticas variadas: política, economía, ciencia, sociedad, tecnología, medioambiente, ética, filosofía aplicada.
+Tu tarea: Busca y lista entre 10 y 12 noticias relevantes de HOY, con foco principal en España. Elige noticias de temáticas variadas: política, economía, ciencia, sociedad, tecnología, medioambiente, ética, filosofía aplicada.
 
 Para cada noticia proporciona:
 1. Titular (conciso y fiel al hecho)
@@ -36,7 +36,8 @@ Criterios de selección:
 - Evita clickbait, noticias de entretenimiento puro o deportes
 - Evita temas idénticos o muy similares a los ya publicados arriba
 - Prioriza noticias que generen debate genuino con al menos dos posturas legítimas
-- Variedad geográfica: mezcla noticias de España con noticias internacionales
+- España primero: al menos 7 u 8 noticias deben ser de actualidad española (política nacional, sociedad, economía, ciencia o medioambiente en España)
+- Solo incluye noticias internacionales si el tema tiene un impacto global inequívoco y transversal (crisis geopolítica grave, pandemia, descubrimiento científico de alcance mundial, etc.); evita noticias extranjeras de interés local o regional
 
 Formatea la lista numerada del 1 al 12.`;
 }

@@ -14,6 +14,10 @@ class ApiEndpoints {
   static const String debatesToday = '/api/v1/debates/today';
   static const String debatesTrending = '/api/v1/debates/trending';
   static const String debatesSearch = '/api/v1/debates/search';
+  static const String debatesTicker = '/api/v1/debates/ticker';
+  static const String debatesTopToday = '/api/v1/debates/top-today';
+  static const String debatesTopWeek = '/api/v1/debates/top-week';
+  static const String debatesRecent = '/api/v1/debates/recent';
   static const String debates = '/api/v1/debates';
   static String debateById(int id) => '/api/v1/debates/$id';
   static String debatePositions(int id) => '/api/v1/debates/$id/positions';
@@ -24,6 +28,7 @@ class ApiEndpoints {
   static String userByUsername(String username) => '/api/v1/users/$username';
   static const String me = '/api/v1/users/me';
   static const String myFavorites = '/api/v1/users/me/favorites';
+  static const String usersProtagonistas = '/api/v1/users/protagonistas';
 
   // Social
   static const String friends = '/api/v1/friends';

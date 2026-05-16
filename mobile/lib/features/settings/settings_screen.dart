@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/api/api_client.dart';
 import '../../core/auth/auth_provider.dart';
+import '../../core/config/app_links.dart';
 import '../../shared/theme/app_theme.dart';
 
 class SettingsScreen extends ConsumerStatefulWidget {
@@ -20,6 +22,65 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
   // Privacy
   bool _publicProfile = true;
+
+  // ── Open URL ────────────────────────────────────────────────────────────────
+
+  Future<void> _openUrl(String url) async {
+    final uri = Uri.parse(url);
+    if (!await launchUrl(uri, mode: LaunchMode.externalApplication)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('No se pudo abrir: $url')),
+        );
+      }
+    }
+  }
+
+  Future<void> _openEmail() async {
+    final uri = Uri(scheme: 'mailto', path: AppLinks.supportEmail,
+        queryParameters: {'subject': 'Soporte TDD'});
+    if (!await launchUrl(uri)) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text(AppLinks.supportEmail)),
+        );
+      }
+    }
+  }
+
+  void _showAiDisclaimer() {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          'Contenido generado por IA',
+          style: TddTypography.serif(size: 18, weight: FontWeight.w500),
+        ),
+        content: Text(
+          'Los perfiles y debates marcados con IA son generados automáticamente. '
+          'Su contenido puede contener errores, imprecisiones o puntos de vista '
+          'no representativos. Consulta siempre fuentes adicionales antes de '
+          'tomar decisiones basadas en este contenido.',
+          style: TddTypography.sans(size: 14, height: 1.6, color: TddColors.text2),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Entendido',
+                style: TddTypography.mono(size: 11, color: TddColors.accent)),
+          ),
+          TextButton(
+            onPressed: () {
+              Navigator.pop(ctx);
+              _openUrl(AppLinks.aiInfo);
+            },
+            child: Text('Saber más',
+                style: TddTypography.mono(size: 11, color: TddColors.text3)),
+          ),
+        ],
+      ),
+    );
+  }
 
   // ── Logout ──────────────────────────────────────────────────────────────────
 
@@ -179,20 +240,32 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
             onChanged: (v) => setState(() => _publicProfile = v),
           ),
 
+          // ── SOPORTE ───────────────────────────────────────────────────────
+          _sectionHeader('SOPORTE'),
+          _actionRow(
+            label: 'Centro de ayuda',
+            onTap: () => _openUrl(AppLinks.supportWeb),
+          ),
+          _actionRow(
+            label: 'Contactar por email',
+            subtitle: AppLinks.supportEmail,
+            onTap: _openEmail,
+          ),
+
           // ── INFORMACIÓN ───────────────────────────────────────────────────
           _sectionHeader('INFORMACIÓN'),
           _infoRow(label: 'Versión', value: '1.0.0'),
           _actionRow(
+            label: 'Aviso sobre contenido IA',
+            onTap: _showAiDisclaimer,
+          ),
+          _actionRow(
             label: 'Términos de uso',
-            onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('tddebate.es/legal/terminos')),
-            ),
+            onTap: () => _openUrl(AppLinks.terms),
           ),
           _actionRow(
             label: 'Política de privacidad',
-            onTap: () => ScaffoldMessenger.of(context).showSnackBar(
-              const SnackBar(content: Text('tddebate.es/legal/privacidad')),
-            ),
+            onTap: () => _openUrl(AppLinks.privacy),
           ),
 
           // ── ZONA DE PELIGRO ───────────────────────────────────────────────
@@ -238,6 +311,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     required String label,
     required VoidCallback onTap,
     Color? labelColor,
+    String? subtitle,
   }) =>
       InkWell(
         onTap: onTap,
@@ -249,11 +323,23 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 15),
           child: Row(
             children: [
-              Text(label,
-                  style: TddTypography.sans(
-                      size: 14,
-                      color: labelColor ?? TddColors.text)),
-              const Spacer(),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label,
+                        style: TddTypography.sans(
+                            size: 14,
+                            color: labelColor ?? TddColors.text)),
+                    if (subtitle != null) ...[
+                      const SizedBox(height: 2),
+                      Text(subtitle,
+                          style: TddTypography.mono(
+                              size: 10, color: TddColors.text3)),
+                    ],
+                  ],
+                ),
+              ),
               Icon(Icons.chevron_right, size: 18, color: TddColors.text4),
             ],
           ),

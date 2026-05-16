@@ -1,0 +1,51 @@
+{% extends 'legal/base.html.twig' %}
+{% block title %}Política de IA — TuDebateDiario{% endblock %}
+
+{% block content %}
+<p class="text-muted small mb-1">Última actualización: {{ lastUpdated }}</p>
+<h1 class="section-title mb-4">Política de Inteligencia Artificial</h1>
+
+<p>TuDebateDiario utiliza inteligencia artificial (IA) para generar parte del contenido editorial de la App. Esta política explica cómo funciona esa IA, qué limitaciones tiene y cómo garantizamos una experiencia transparente y responsable.</p>
+
+<h2>1. Qué es el contenido generado por IA en la App</h2>
+<p>La App incluye <strong>ocho personajes editoriales ficticios</strong>, cada uno con una voz y perspectiva propias. Estos personajes publican debates de actualidad redactados automáticamente mediante modelos de lenguaje de gran escala (LLM). Su propósito es ofrecer un punto de partida para el debate, no sustituir el periodismo ni la opinión experta.</p>
+<p>Todo debate generado por IA está claramente identificado con el nombre y avatar del personaje editorial que lo firma.</p>
+
+<h2>2. Proveedor de IA</h2>
+<p>Utilizamos la API de <strong>Anthropic</strong> (modelo Claude) para la generación de contenido. El procesamiento de los textos se realiza en los servidores de Anthropic conforme a su política de privacidad y condiciones de uso. No se transfieren datos personales de usuarios al modelo de IA.</p>
+
+<h2>3. Limitaciones del contenido generado por IA</h2>
+<ul>
+    <li>El contenido generado puede contener <strong>inexactitudes o errores factuales</strong>. No debe tomarse como fuente de información verificada.</li>
+    <li>Los personajes expresan opiniones ficticias; <strong>no representan la posición de TuDebateDiario</strong> ni de sus creadores.</li>
+    <li>La IA puede generar texto que, pese a nuestros filtros, resulte inadecuado. Disponemos de un sistema de moderación para detectar y eliminar ese contenido.</li>
+</ul>
+
+<h2>4. Supervisión humana y moderación</h2>
+<p>Todo el flujo de generación de contenido está supervisado por nuestro equipo. Antes de publicarse, los debates generados pasan por filtros automáticos. Además, los usuarios pueden reportar cualquier contenido inapropiado desde la App y nuestro equipo de moderación lo revisa manualmente.</p>
+
+<h2>5. Datos utilizados para la generación</h2>
+<p>El sistema de IA recibe únicamente:</p>
+<ul>
+    <li>Titulares y resúmenes de noticias públicas del día (sin datos personales de usuarios).</li>
+    <li>La descripción del personaje editorial (su voz, estilo y área de especialidad).</li>
+</ul>
+<p>No usamos datos de los usuarios de la App para entrenar ni ajustar modelos de IA.</p>
+
+<h2>6. Transparencia</h2>
+<p>Nos comprometemos a:</p>
+<ul>
+    <li>Identificar siempre el contenido generado por IA con el nombre del personaje editorial.</li>
+    <li>No presentar nunca contenido de IA como si fuera escrito por periodistas o personas reales.</li>
+    <li>Informarte de cualquier cambio significativo en el uso de IA dentro de la App.</li>
+</ul>
+
+<h2>7. Reportar contenido problemático</h2>
+<p>Si encuentras un debate generado por IA que consideras incorrecto, ofensivo o inapropiado, puedes reportarlo desde la propia App o escribirnos a <a href="mailto:info@tudebatediario.com">info@tudebatediario.com</a>. Revisaremos tu reporte en un plazo máximo de <strong>48 horas laborables</strong>.</p>
+
+<h2>8. Cambios en esta política</h2>
+<p>Actualizaremos esta política si introducimos cambios en el uso de la IA. La fecha de «Última actualización» refleja la versión vigente.</p>
+
+<h2>9. Contacto</h2>
+<p>Para cualquier pregunta sobre el uso de IA en la App: <a href="mailto:info@tudebatediario.com">info@tudebatediario.com</a></p>
+{% endblock %}

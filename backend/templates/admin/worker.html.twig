@@ -1,67 +1,66 @@
 {% extends 'admin/base.html.twig' %}
-
-{% block title %}Worker Config — TDD Admin{% endblock %}
+{% block title %}Worker IA — Admin TDD{% endblock %}
 
 {% block content %}
-<h2 class="mb-4">Worker Configuration</h2>
+<h2 class="mb-4">Worker IA</h2>
 
 <div class="row">
     <div class="col-md-6">
-        <div class="card mb-4">
-            <div class="card-header"><strong>Settings</strong></div>
+        <div class="card bg-white mb-4">
+            <div class="card-header fw-semibold">Configuración</div>
             <div class="card-body">
                 <form method="POST" action="/admin/worker/config">
                     <div class="mb-3">
-                        <label class="form-label">Cron Schedule</label>
+                        <label class="form-label small text-muted">Cron schedule</label>
                         <input type="text" class="form-control" name="schedule" value="{{ config.schedule }}" placeholder="0 7 * * *">
-                        <div class="form-text">Standard cron expression</div>
+                        <div class="form-text">Expresión cron estándar (hora UTC)</div>
                     </div>
                     <div class="mb-3 form-check">
                         <input type="checkbox" class="form-check-input" name="enabled" id="enabled" {% if config.enabled %}checked{% endif %}>
-                        <label class="form-check-label" for="enabled">Worker Enabled</label>
+                        <label class="form-check-label" for="enabled">Worker activo</label>
                     </div>
-                    <div class="row">
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Dedup Days</label>
+                    <div class="row g-2 mb-3">
+                        <div class="col-4">
+                            <label class="form-label small text-muted">Días dedup</label>
                             <input type="number" class="form-control" name="dedupDays" value="{{ config.dedupDays }}" min="1" max="90">
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Rotation Limit Days</label>
+                        <div class="col-4">
+                            <label class="form-label small text-muted">Rotación (días)</label>
                             <input type="number" class="form-control" name="rotationLimitDays" value="{{ config.rotationLimitDays }}" min="1" max="30">
                         </div>
-                        <div class="col-md-4 mb-3">
-                            <label class="form-label">Target Debates</label>
+                        <div class="col-4">
+                            <label class="form-label small text-muted">Debates/día</label>
                             <input type="number" class="form-control" name="targetDebates" value="{{ config.targetDebates }}" min="1" max="20">
                         </div>
                     </div>
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">OpenCode Model</label>
+                    <div class="row g-2 mb-4">
+                        <div class="col-6">
+                            <label class="form-label small text-muted">Modelo IA</label>
                             <input type="text" class="form-control" name="opencodeModel" value="{{ config.opencodeModel }}">
                         </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">OpenCode Provider</label>
+                        <div class="col-6">
+                            <label class="form-label small text-muted">Proveedor</label>
                             <input type="text" class="form-control" name="opencodeProvider" value="{{ config.opencodeProvider }}">
                         </div>
                     </div>
-                    <button type="submit" class="btn btn-primary">Save Configuration</button>
+                    <button type="submit" class="btn btn-primary">Guardar</button>
                 </form>
             </div>
         </div>
 
-        <div class="card mb-4">
-            <div class="card-header"><strong>Manual Trigger</strong></div>
+        <div class="card bg-white mb-4">
+            <div class="card-header fw-semibold">Ejecución manual</div>
             <div class="card-body">
-                <p class="text-muted">Queue an immediate worker execution on next poll.</p>
+                <p class="text-muted small">Programa una ejecución inmediata del worker en el siguiente ciclo de poll.</p>
                 <form method="POST" action="/admin/worker/trigger">
                     <button type="submit" class="btn btn-warning"
-                        onclick="return confirm('Trigger worker run?')">
-                        Trigger Worker Now
+                        onclick="return confirm('¿Lanzar el worker ahora?')">
+                        <i class="bi bi-play-fill me-1"></i>Lanzar worker
                     </button>
                 </form>
                 {% if config.triggerPending %}
-                <div class="alert alert-warning mt-3 mb-0">
-                    <strong>Trigger pending</strong> — worker will run on next poll.
+                <div class="alert alert-warning mt-3 mb-0 small">
+                    <strong>Ejecución pendiente</strong> — el worker arrancará en el próximo ciclo.
                 </div>
                 {% endif %}
             </div>
@@ -69,50 +68,44 @@
     </div>
 
     <div class="col-md-6">
-        <div class="card">
-            <div class="card-header"><strong>Run History</strong></div>
-            <div class="card-body p-0">
-                <div class="table-responsive">
-                    <table class="table table-sm table-striped mb-0">
-                        <thead class="table-dark">
-                            <tr>
-                                <th>ID</th>
-                                <th>Status</th>
-                                <th>Debates</th>
-                                <th>Started</th>
-                                <th>Duration</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for run in runs %}
-                            <tr>
-                                <td><code title="{{ run.id }}">{{ run.id[:8] }}…</code></td>
-                                <td>
-                                    <span class="badge
-                                        {% if run.status == 'ok' %}bg-success
-                                        {% elseif run.status == 'running' %}bg-warning text-dark
-                                        {% else %}bg-danger{% endif %}">
-                                        {{ run.status }}
-                                    </span>
-                                </td>
-                                <td>{{ run.debatesGenerated }}</td>
-                                <td>{{ run.startedAt|date('m/d H:i') }}</td>
-                                <td>
-                                    {% if run.finishedAt %}
-                                        {{ ((run.finishedAt.timestamp - run.startedAt.timestamp))|abs }}s
-                                    {% else %}
-                                        —
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% else %}
-                            <tr>
-                                <td colspan="5" class="text-center text-muted py-3">No runs yet</td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+        <div class="card bg-white">
+            <div class="card-header fw-semibold">Historial de ejecuciones</div>
+            <div class="table-responsive">
+                <table class="table table-sm table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Estado</th>
+                            <th>Debates</th>
+                            <th>Inicio</th>
+                            <th>Duración</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for run in runs %}
+                        <tr>
+                            <td><code class="small" title="{{ run.id }}">{{ run.id[:8] }}…</code></td>
+                            <td>
+                                <span class="badge
+                                    {% if run.status == 'ok' %}bg-success
+                                    {% elseif run.status == 'running' %}bg-warning text-dark
+                                    {% else %}bg-danger{% endif %}">
+                                    {{ run.status }}
+                                </span>
+                            </td>
+                            <td>{{ run.debatesGenerated }}</td>
+                            <td>{{ run.startedAt|date('d/m H:i') }}</td>
+                            <td>
+                                {% if run.finishedAt %}
+                                    {{ ((run.finishedAt.timestamp - run.startedAt.timestamp))|abs }}s
+                                {% else %}—{% endif %}
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="text-center text-muted py-3">Sin ejecuciones</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </div>

@@ -17,14 +17,16 @@ import '../../features/chat/chat_screen.dart';
 import '../../features/profile/my_profile_screen.dart';
 import '../../features/profile/edit_profile_screen.dart';
 import '../../features/settings/settings_screen.dart';
+import '../../features/splash/splash_screen.dart';
 
 final _authRoutes = {'/login', '/register'};
+const _splashRoute = '/splash';
 
 final routerProvider = Provider<GoRouter>((ref) {
   ref.watch(authProvider.notifier);
 
   return GoRouter(
-    initialLocation: '/login',
+    initialLocation: _splashRoute,
     refreshListenable: _AuthListenable(ref),
     redirect: (context, state) {
       final authState = ref.read(authProvider);
@@ -33,18 +35,22 @@ final routerProvider = Provider<GoRouter>((ref) {
       final location = state.matchedLocation;
       final isAuthRoute = _authRoutes.contains(location);
 
-      // Still initializing — keep on auth screens, redirect home→login to avoid 401
-      if (isLoading) return isAuthRoute ? null : '/login';
+      // Mostramos splash mientras carga la autenticación
+      if (isLoading) return location == _splashRoute ? null : _splashRoute;
 
-      // Not authenticated and not on auth screen → redirect to login
+      // No autenticado → login (salir del splash o de cualquier ruta protegida)
       if (!isAuth && !isAuthRoute) return '/login';
 
-      // Authenticated and on auth screen → redirect to home
-      if (isAuth && isAuthRoute) return '/home';
+      // Autenticado en pantalla de auth o splash → home
+      if (isAuth && (isAuthRoute || location == _splashRoute)) return '/home';
 
       return null;
     },
     routes: [
+      GoRoute(
+        path: _splashRoute,
+        builder: (_, __) => const SplashScreen(),
+      ),
       GoRoute(
         path: '/login',
         builder: (_, __) => const LoginScreen(),

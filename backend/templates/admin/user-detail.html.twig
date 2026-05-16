@@ -1,0 +1,181 @@
+{% extends 'admin/base.html.twig' %}
+{% block title %}@{{ user.username }} — Admin TDD{% endblock %}
+
+{% block content %}
+<div class="mb-4">
+    <a href="/admin/users" class="text-muted text-decoration-none small">← Usuarios</a>
+    <h2 class="mb-0 mt-1">@{{ user.username }}</h2>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-4">
+        <div class="card bg-white mb-3">
+            <div class="card-header fw-semibold small">Perfil</div>
+            <div class="card-body small">
+                <dl class="row mb-0">
+                    <dt class="col-5 text-muted">ID</dt>
+                    <dd class="col-7">{{ user.id }}</dd>
+
+                    <dt class="col-5 text-muted">Usuario</dt>
+                    <dd class="col-7 fw-semibold">{{ user.username }}</dd>
+
+                    <dt class="col-5 text-muted">Correo</dt>
+                    <dd class="col-7 text-break">{{ user.email }}</dd>
+
+                    <dt class="col-5 text-muted">Rol</dt>
+                    <dd class="col-7">
+                        <span class="badge {{ user.role == 'admin' ? 'bg-danger' : 'bg-secondary' }}">{{ user.role }}</span>
+                    </dd>
+
+                    <dt class="col-5 text-muted">Estado</dt>
+                    <dd class="col-7">
+                        <span class="badge {{ user.status == 'active' ? 'bg-success' : 'bg-warning text-dark' }}">
+                            {{ user.status == 'active' ? 'activo' : 'suspendido' }}
+                        </span>
+                    </dd>
+
+                    <dt class="col-5 text-muted">Shadow ban</dt>
+                    <dd class="col-7">
+                        {% if user.isShadowBanned %}<span class="badge bg-dark">sí</span>{% else %}no{% endif %}
+                    </dd>
+
+                    <dt class="col-5 text-muted">Score</dt>
+                    <dd class="col-7">{{ user.reliabilityScore }}</dd>
+
+                    <dt class="col-5 text-muted">Registro</dt>
+                    <dd class="col-7">{{ user.createdAt|date('d/m/Y') }}</dd>
+
+                    {% if user.isAiPersona %}
+                    <dt class="col-5 text-muted">Tipo</dt>
+                    <dd class="col-7"><span class="badge bg-primary">Personaje IA</span></dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+
+        {% if user.bio %}
+        <div class="card bg-white mb-3">
+            <div class="card-header fw-semibold small">Bio</div>
+            <div class="card-body small">{{ user.bio }}</div>
+        </div>
+        {% endif %}
+
+        <div class="card bg-white">
+            <div class="card-header fw-semibold small">Acciones</div>
+            <div class="card-body d-flex flex-column gap-2">
+                <form method="POST" action="/admin/users/{{ user.id }}/status">
+                    <input type="hidden" name="redirect" value="/admin/users/{{ user.id }}">
+                    {% if user.status == 'active' %}
+                    <input type="hidden" name="status" value="suspended">
+                    <button type="submit" class="btn btn-sm btn-outline-warning w-100"
+                        onclick="return confirm('¿Suspender a {{ user.username }}?')">Suspender cuenta</button>
+                    {% else %}
+                    <input type="hidden" name="status" value="active">
+                    <button type="submit" class="btn btn-sm btn-outline-success w-100">Reactivar cuenta</button>
+                    {% endif %}
+                </form>
+
+                {% if user.isShadowBanned %}
+                <form method="POST" action="/admin/moderation/{{ user.id }}/unban">
+                    <button type="submit" class="btn btn-sm btn-outline-info w-100"
+                        onclick="return confirm('¿Levantar el shadow ban?')">Levantar shadow ban</button>
+                </form>
+                {% else %}
+                <form method="POST" action="/admin/moderation/{{ user.id }}/ban">
+                    <input type="hidden" name="redirect" value="/admin/users/{{ user.id }}">
+                    <button type="submit" class="btn btn-sm btn-outline-dark w-100"
+                        onclick="return confirm('¿Aplicar shadow ban a {{ user.username }}?')">Aplicar shadow ban</button>
+                </form>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-8">
+        <h5 class="mb-3">Debates ({{ debates|length }})</h5>
+        <div class="card bg-white mb-4">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Título</th>
+                            <th>Tipo</th>
+                            <th>Fecha</th>
+                            <th>Coment.</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for debate in debates %}
+                        <tr>
+                            <td class="text-muted small">{{ debate.id }}</td>
+                            <td class="small">
+                                <a href="/admin/debates/{{ debate.id }}" class="text-decoration-none">
+                                    {{ debate.title|length > 55 ? debate.title[:55] ~ '…' : debate.title }}
+                                </a>
+                            </td>
+                            <td>
+                                <span class="badge {{ debate.authorType == 'ai' ? 'bg-primary' : 'bg-info text-dark' }}">
+                                    {{ debate.authorType == 'ai' ? 'IA' : 'usuario' }}
+                                </span>
+                            </td>
+                            <td class="small text-muted">{{ debate.dayDate|date('d/m/Y') }}</td>
+                            <td class="small">{{ debate.comments|length }}</td>
+                            <td>
+                                <form method="POST" action="/admin/debates/{{ debate.id }}/delete" class="d-inline">
+                                    <button type="submit" class="btn btn-xs btn-outline-danger"
+                                        onclick="return confirm('¿Eliminar este debate?')">Eliminar</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="6" class="text-center text-muted py-3">Sin debates</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <h5 class="mb-3">Comentarios ({{ comments|length }})</h5>
+        <div class="card bg-white">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Debate</th>
+                            <th>Contenido</th>
+                            <th>Fecha</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for comment in comments %}
+                        <tr>
+                            <td class="text-muted small">{{ comment.id }}</td>
+                            <td class="small">
+                                <a href="/admin/debates/{{ comment.debate.id }}" class="text-muted text-decoration-none">
+                                    #{{ comment.debate.id }}
+                                </a>
+                            </td>
+                            <td class="small">{{ comment.content|length > 90 ? comment.content[:90] ~ '…' : comment.content }}</td>
+                            <td class="small text-muted">{{ comment.createdAt|date('d/m/Y H:i') }}</td>
+                            <td>
+                                <form method="POST" action="/admin/comments/{{ comment.id }}/delete" class="d-inline">
+                                    <input type="hidden" name="redirect" value="/admin/users/{{ user.id }}">
+                                    <button type="submit" class="btn btn-xs btn-outline-danger"
+                                        onclick="return confirm('¿Eliminar este comentario?')">Eliminar</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="text-center text-muted py-3">Sin comentarios</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -46,6 +46,22 @@ class UserRepository extends ServiceEntityRepository
             ->getResult();
     }
 
+    /** Top usuarios reales por reliabilityScore para el ranking de Protagonistas. */
+    public function findProtagonistaRanking(int $limit = 20): array
+    {
+        return $this->createQueryBuilder('u')
+            ->where('u.isAiPersona = :ai')
+            ->andWhere('u.isShadowBanned = :banned')
+            ->andWhere('u.status = :status')
+            ->setParameter('ai', false)
+            ->setParameter('banned', false)
+            ->setParameter('status', 'active')
+            ->orderBy('u.reliabilityScore', 'DESC')
+            ->setMaxResults($limit)
+            ->getQuery()
+            ->getResult();
+    }
+
     public function save(User $user, bool $flush = true): void
     {
         $this->getEntityManager()->persist($user);

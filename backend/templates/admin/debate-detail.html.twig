@@ -1,0 +1,125 @@
+{% extends 'admin/base.html.twig' %}
+{% block title %}Debate #{{ debate.id }} — Admin TDD{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <div>
+        <a href="/admin/debates" class="text-muted text-decoration-none small">← Debates</a>
+        <h2 class="mb-0 mt-1">Debate #{{ debate.id }}</h2>
+    </div>
+    <form method="POST" action="/admin/debates/{{ debate.id }}/delete">
+        <button type="submit" class="btn btn-outline-danger btn-sm"
+            onclick="return confirm('¿Eliminar este debate? Esta acción es irreversible.')">
+            Eliminar debate
+        </button>
+    </form>
+</div>
+
+<div class="row g-4">
+    <div class="col-md-8">
+        <div class="card bg-white mb-4">
+            <div class="card-body">
+                <h4 class="fw-bold mb-1">{{ debate.title }}</h4>
+                <div class="d-flex gap-2 mb-3">
+                    <span class="badge {{ debate.authorType == 'ai' ? 'bg-primary' : 'bg-info text-dark' }}">
+                        {{ debate.authorType == 'ai' ? 'IA' : 'Usuario' }}
+                    </span>
+                    <span class="text-muted small align-self-center">{{ debate.dayDate|date('d/m/Y') }}</span>
+                </div>
+                {% if debate.summary %}
+                <p class="text-muted">{{ debate.summary }}</p>
+                {% endif %}
+                {% if debate.body %}
+                <hr>
+                <div class="small">{{ debate.body|nl2br }}</div>
+                {% endif %}
+                {% if debate.sourceUrl %}
+                <hr>
+                <div class="small text-muted">
+                    <strong>Fuente:</strong>
+                    <a href="{{ debate.sourceUrl }}" target="_blank" rel="noopener" class="text-break">{{ debate.sourceUrl }}</a>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+        <h5 class="mb-3">Comentarios ({{ debate.comments|length }})</h5>
+        <div class="card bg-white">
+            <div class="table-responsive">
+                <table class="table table-hover align-middle mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>ID</th>
+                            <th>Usuario</th>
+                            <th>Texto</th>
+                            <th>Fecha</th>
+                            <th></th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for comment in debate.comments %}
+                        <tr>
+                            <td class="text-muted small">{{ comment.id }}</td>
+                            <td class="small">@{{ comment.author.username }}</td>
+                            <td class="small">{{ comment.content|length > 80 ? comment.content[:80] ~ '…' : comment.content }}</td>
+                            <td class="small text-muted">{{ comment.createdAt|date('d/m/Y H:i') }}</td>
+                            <td>
+                                <form method="POST" action="/admin/comments/{{ comment.id }}/delete" class="d-inline">
+                                    <input type="hidden" name="redirect" value="/admin/debates/{{ debate.id }}">
+                                    <button type="submit" class="btn btn-xs btn-outline-danger"
+                                        onclick="return confirm('¿Eliminar este comentario?')">Eliminar</button>
+                                </form>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr><td colspan="5" class="text-center text-muted py-3">Sin comentarios</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-4">
+        <div class="card bg-white mb-3">
+            <div class="card-header fw-semibold small">Metadatos</div>
+            <div class="card-body small">
+                <dl class="row mb-0">
+                    <dt class="col-5 text-muted">ID</dt>
+                    <dd class="col-7">{{ debate.id }}</dd>
+
+                    <dt class="col-5 text-muted">Personaje</dt>
+                    <dd class="col-7">
+                        <a href="/admin/users/{{ debate.createdBy.id }}" class="text-decoration-none">
+                            @{{ debate.createdBy.username }}
+                        </a>
+                    </dd>
+
+                    <dt class="col-5 text-muted">Tipo autor</dt>
+                    <dd class="col-7">{{ debate.authorType }}</dd>
+
+                    <dt class="col-5 text-muted">Fecha</dt>
+                    <dd class="col-7">{{ debate.dayDate|date('d/m/Y') }}</dd>
+
+                    <dt class="col-5 text-muted">Comentarios</dt>
+                    <dd class="col-7">{{ debate.comments|length }}</dd>
+
+                    {% if debate.imageUrl %}
+                    <dt class="col-5 text-muted">Imagen</dt>
+                    <dd class="col-7">
+                        <a href="{{ debate.imageUrl }}" target="_blank" class="small">Ver →</a>
+                    </dd>
+                    {% endif %}
+                </dl>
+            </div>
+        </div>
+
+        {% if debate.imageUrl %}
+        <div class="card bg-white">
+            <img src="{{ debate.imageUrl }}" class="card-img-top" alt="Imagen del debate"
+                style="max-height:200px;object-fit:cover;">
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
