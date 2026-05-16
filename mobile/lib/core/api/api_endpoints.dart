@@ -23,6 +23,8 @@ class ApiEndpoints {
   static String debatePositions(int id) => '/api/v1/debates/$id/positions';
   static String debateComments(int id) => '/api/v1/debates/$id/comments';
   static String commentVote(int id) => '/api/v1/comments/$id/vote';
+  static String debateReport(int id) => '/api/v1/debates/$id/report';
+  static String commentReport(int id) => '/api/v1/comments/$id/report';
 
   // Users
   static String userByUsername(String username) => '/api/v1/users/$username';

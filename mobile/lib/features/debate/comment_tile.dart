@@ -8,6 +8,7 @@ class CommentTile extends StatelessWidget {
   final Comment comment;
   final void Function(Comment)? onReply;
   final void Function(Comment, String)? onVote;
+  final void Function(Comment)? onReport;
   final bool isReply;
 
   const CommentTile({
@@ -15,6 +16,7 @@ class CommentTile extends StatelessWidget {
     required this.comment,
     this.onReply,
     this.onVote,
+    this.onReport,
     this.isReply = false,
   });
 
@@ -135,6 +137,17 @@ class CommentTile extends StatelessWidget {
                           style: TddTypography.mono(
                             size: 10.5,
                             color: TddColors.text3,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      GestureDetector(
+                        onTap: () => onReport?.call(comment),
+                        child: Text(
+                          'Reportar',
+                          style: TddTypography.mono(
+                            size: 10.5,
+                            color: TddColors.text4,
                           ),
                         ),
                       ),

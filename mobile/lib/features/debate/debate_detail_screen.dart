@@ -93,6 +93,91 @@ class _DebateDetailScreenState extends ConsumerState<DebateDetailScreen> {
     } catch (_) {}
   }
 
+  Future<String?> _showReportDialog(String title) {
+    String? selected;
+    const reasons = [
+      'Desinformación o contenido falso',
+      'Contenido ofensivo o discurso de odio',
+      'Spam o publicidad',
+      'Acoso o amenazas',
+      'Otro',
+    ];
+    return showDialog<String>(
+      context: context,
+      builder: (ctx) => StatefulBuilder(
+        builder: (ctx, setSt) => AlertDialog(
+          title: Text(
+            title,
+            style: TddTypography.serif(size: 17, weight: FontWeight.w500),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: reasons
+                .map(
+                  (r) => RadioListTile<String>(
+                    dense: true,
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(r,
+                        style: TddTypography.sans(size: 13)),
+                    value: r,
+                    groupValue: selected,
+                    activeColor: TddColors.accent,
+                    onChanged: (v) => setSt(() => selected = v),
+                  ),
+                )
+                .toList(),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: Text('Cancelar',
+                  style: TddTypography.mono(size: 11, color: TddColors.text3)),
+            ),
+            TextButton(
+              onPressed: selected == null
+                  ? null
+                  : () => Navigator.pop(ctx, selected),
+              child: Text('Reportar',
+                  style: TddTypography.mono(size: 11, color: TddColors.accent)),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _reportDebate() async {
+    final reason = await _showReportDialog('Reportar debate');
+    if (reason == null || !mounted) return;
+    try {
+      final dio = ref.read(apiClientProvider);
+      await dio.post(ApiEndpoints.debateReport(widget.debateId),
+          data: {'reason': reason});
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Debate reportado. Lo revisaremos pronto.')),
+        );
+      }
+    } catch (_) {}
+  }
+
+  Future<void> _reportComment(Comment comment) async {
+    final reason = await _showReportDialog('Reportar comentario');
+    if (reason == null || !mounted) return;
+    try {
+      final dio = ref.read(apiClientProvider);
+      await dio.post(ApiEndpoints.commentReport(comment.id),
+          data: {'reason': reason});
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+              content: Text('Comentario reportado. Lo revisaremos pronto.')),
+        );
+      }
+    } catch (_) {}
+  }
+
   @override
   Widget build(BuildContext context) {
     final debateAsync = ref.watch(_debateDetailProvider(widget.debateId));
@@ -106,6 +191,21 @@ class _DebateDetailScreenState extends ConsumerState<DebateDetailScreen> {
           style: TddTypography.mono(size: 11, color: TddColors.text3),
         ),
         centerTitle: true,
+        actions: [
+          PopupMenuButton<String>(
+            icon: Icon(Icons.more_vert, size: 20, color: TddColors.text2),
+            onSelected: (value) {
+              if (value == 'report') _reportDebate();
+            },
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'report',
+                child: Text('Reportar debate',
+                    style: TddTypography.sans(size: 14)),
+              ),
+            ],
+          ),
+        ],
       ),
       body: debateAsync.when(
         loading: () => const LoadingIndicator(),
@@ -256,6 +356,7 @@ class _DebateDetailScreenState extends ConsumerState<DebateDetailScreen> {
                                         onReply: (c) =>
                                             setState(() => _replyingTo = c),
                                         onVote: _vote,
+                                        onReport: _reportComment,
                                       ))
                                   .toList(),
                             ),

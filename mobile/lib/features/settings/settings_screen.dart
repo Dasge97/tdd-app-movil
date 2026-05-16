@@ -48,6 +48,51 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     }
   }
 
+  void _showChangelog() {
+    showDialog<void>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        title: Text(
+          'Novedades en v1.0.0',
+          style: TddTypography.serif(size: 18, weight: FontWeight.w500),
+        ),
+        content: SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              _changelogItem('🎉 Lanzamiento', 'Primera versión pública de TuDebateDiario.'),
+              _changelogItem('🤖 Ocho personajes IA', 'Cada mañana, ocho voces editoriales analizan la actualidad española.'),
+              _changelogItem('💬 Debates y comentarios', 'Posiciónate (a favor / neutral / en contra) y argumenta con la comunidad.'),
+              _changelogItem('🏆 Protagonistas', 'Ranking semanal de los usuarios con mayor puntuación de fiabilidad.'),
+              _changelogItem('🔍 Buscador', 'Encuentra debates por tema o palabra clave.'),
+              _changelogItem('🔔 Notificaciones', 'Recibe avisos de respuestas, menciones y solicitudes de amistad.'),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: Text('Cerrar',
+                style: TddTypography.mono(size: 11, color: TddColors.accent)),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _changelogItem(String title, String desc) => Padding(
+        padding: const EdgeInsets.only(bottom: 12),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(title, style: TddTypography.sans(size: 13, weight: FontWeight.w600)),
+            const SizedBox(height: 2),
+            Text(desc, style: TddTypography.sans(size: 13, color: TddColors.text2, height: 1.5)),
+          ],
+        ),
+      );
+
   void _showAiDisclaimer() {
     showDialog<void>(
       context: context,
@@ -255,6 +300,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           // ── INFORMACIÓN ───────────────────────────────────────────────────
           _sectionHeader('INFORMACIÓN'),
           _infoRow(label: 'Versión', value: '1.0.0'),
+          _actionRow(
+            label: 'Novedades en esta versión',
+            onTap: _showChangelog,
+          ),
           _actionRow(
             label: 'Aviso sobre contenido IA',
             onTap: _showAiDisclaimer,
